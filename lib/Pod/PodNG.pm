@@ -18,7 +18,9 @@ package Pod::PodNG;
 use strict;
 use warnings;
 
-#our $VERSION	= v0.001;
+require 5.010;
+
+use Pod::Simple;
 
 #use Exporter;
 #use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);

@@ -1,0 +1,15 @@
+#!/usr/bin/perl -w
+
+# This is a commandline wrapper around the Pod::PodNG Perl module
+
+use strict;
+use warnings;
+use Getopt::Long;
+use Pod::PodNG;
+
+my $podng = Pod::PodNG->new();
+
+# TODO:
+# * option handling
+# * let Pod::PodNG parse the input
+# * output the result
