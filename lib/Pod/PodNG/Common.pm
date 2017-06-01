@@ -28,6 +28,14 @@ sub new
   $self->_init( $args );
   }
 
+sub _init
+  {
+  my ($self, $args) = @_;
+
+  # the base class does not any initialization on its own
+  $self;
+  }
+
 sub _error
   {
   my ($self, $error) = @_;

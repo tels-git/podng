@@ -20,7 +20,7 @@ use Pod::PodNG::Common;
 
 use vars qw/@ISA/;
 
-@ISA = qw/PodNG::Common/;
+@ISA = qw/Pod::PodNG::Common/;
 
 sub _init
   {
