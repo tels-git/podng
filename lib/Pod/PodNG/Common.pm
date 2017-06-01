@@ -20,8 +20,12 @@ sub new
   {
   my $self = bless {}, shift;
 
+  # If given arguments like ( name => 'foo', bar => 'baz' ), convert them to
+  # a hash ref, otherwise use the single argument:
+  my $args = scalar @_ > 1 && (((scalar @_) % 2) == 0) ? { @_ } : shift;
+
   # call the class _init() routine
-  $self->_init( @_ );
+  $self->_init( $args );
   }
 
 sub _error
