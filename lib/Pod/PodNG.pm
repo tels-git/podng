@@ -17,6 +17,7 @@ package Pod::PodNG;
 
 use strict;
 use warnings;
+use utf8;
 
 require 5.010;
 

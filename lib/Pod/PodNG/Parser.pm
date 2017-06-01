@@ -13,16 +13,17 @@ package Pod::PodNG::Parser;
 
 use strict;
 use warnings;
+use utf8;
 
 require 5.010;
 
-use Pod::Simple;
 use Pod::PodNG::Common;
 use Pod::PodNG::Node;
+use Pod::PodNG::File;
 
 use vars qw/@ISA/;
 
-@ISA = qw/Pod::Simple Pod::PodNG::Common/;
+@ISA = qw/Pod::PodNG::Common/;
 
 sub parse
   {
@@ -30,10 +31,12 @@ sub parse
   my ($self, $input) = @_;
 
   $self->{debug} = 1;
-  # we do only parsing, no output, but just in case discard the output
-  $self->output_string( $self->{_dummy_output} );
 
+  # construct the tree and add the document to it as root
   $self->{tree} = Pod::PodNG::Node->new( type => 'document', name => $input );
+
+  $self->{seen_includes} = {};
+  $self->{include_stack} = {};
 
   if (-f $input)
     {
@@ -41,7 +44,7 @@ sub parse
     }
   else
     {
-    $self->_error( "Input looks like a file, but cannot be read: $!" );
+    $self->_error( "Input looks like a file, but cannot be read: $!" ) if $input =~ /\.pod$/;
     $self->parse_string_document( $input );
     }
 
@@ -49,30 +52,132 @@ sub parse
   0;
   }
 
-sub _handle_element_start
-  {
-  my ($self, $ename, $attr) = @_;
+#############################################################################
+# Managing the file stack (for including)
 
-  $self->log_debug( "Seen begin $self, $ename, $attr" );
+sub _unwind_file_stack
+  {
+  my ($self) = @_;
+
+  $self->{curfile}->close();
+
+  delete $self->{include_stack}->{ $self->{curfile}->get('filename') };
+
+  pop @{ $self->{filestack} };
+
+  # set the last entry in the stack as the current file
+  $self->{curfile} = @{ $self->{filestack} } ? $self->{filestack}->[-1] : undef;
+
+  # for the current file, we are no longer in include mode
+  $self->{curfile}->{in_include} = 0;
+
+  $self;
   }
 
-sub _handle_element_end
+sub _open_file
   {
-  my ($self, $ename, $attr) = @_;
+  my ($self, $filename) = @_;
 
-  # NOTE: $attr_hash_r is only present when $element_name is "over" or "begin"
-  # The remaining code excerpts will mostly ignore this $attr_hash_r, as it is
-  # mostly useless. It is documented where "over-*" and "begin" events are
-  # documented.
+  push @{ $self->{filestack} }, Pod::PodNG::File->new( name => $filename );
+  $self->{curfile} = $self->{filestack}->[-1];
 
-  $self->log_debug( "Seen end $self, $ename, $attr" );
+  $self;
   }
 
-sub _handle_text
-  {
-  my ($self, $text) = @_;
+#############################################################################
+# Reading and analyzing a single line
 
-  $self->log_debug( "Seen text $self, $text" );
+sub _analyse_line
+  {
+  # the main parse routine, parses one line from the input
+  my ($self, $line) = @_;
+
+  # TODO: add the actual parsing
+  print STDERR $line;
+
+  # return undef to signal "end of parse"
+  $line ? 1 : undef;
+  }
+
+sub _read_line
+  {
+  my ($self) = @_;
+
+  # read a single line from the current file
+  my $line = $self->{curfile}->read_line();
+
+  while (!defined $line)
+    {
+    # end of the current file
+    $self->_unwind_file_stack() unless defined $line;
+    # We encountered the end of the document if the file stack is empty
+    last if @{$self->{filestack}} == 0;
+
+    # read the next line from the previous file in case the current was empty
+    $line = $self->{curfile}->read_line();
+    }
+
+  $line;
+  }
+
+
+sub _clean_up
+  {
+  # cleanup data & memory after parsing
+  my ($self) = @_;
+
+  delete $self->{filestack};
+  delete $self->{curfile};
+  delete $self->{seen_includes};
+  delete $self->{include_stack};
+
+  $self;
+  }
+
+
+sub _parse_line
+  {
+  # parse a given line, or read a line from the current file and parse it
+  my ($self, $line) = @_;
+
+  $line = $self->_read_line() unless defined $line;
+
+  $self->_analyse_line($line) if $line;
+  }
+
+
+sub parse_file
+  {
+  my ($self, $filename) = @_;
+
+  # TODO: if given a GLOB; just read from it
+
+  $self->{file_stack} = ();
+  $self->_open_file( $filename );
+
+  while ($self->_parse_line())
+    {
+    # _parse_line() does all the work
+    }
+
+  $self->_clean_up();
+  }
+
+
+sub parse_string_document
+  {
+  my ($self, $content) = @_;
+
+  $self->{file_stack} = ( Pod::PodNG::File->new( '' ) );
+
+  my @lines = split /\n/, $content;
+
+  for my $line (@lines)
+    {
+    $self->_analyze_line($line);
+    }
+
+  $self->_clean_up();
   }
 
 # everything is fine
