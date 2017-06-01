@@ -53,6 +53,15 @@ sub close
   $self;
   }
 
+sub read_line
+  {
+  my ($self) = @_;
+
+  $self->{linenr} ++;
+  my $handle = $self->{handle};
+  $self->{curline} = <$handle>;
+  }
+
 # everything is fine
 1;
 
