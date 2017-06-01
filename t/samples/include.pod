@@ -1,0 +1,9 @@
+=pod
+
+=encoding utf8
+
+=for include-once included.pod
+
+=for include-once included.pod
+
+=cut

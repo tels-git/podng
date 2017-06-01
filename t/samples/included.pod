@@ -1,0 +1,5 @@
+=pod
+
+Included only once, so this text must appear only once.
+
+=cut
