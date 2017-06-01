@@ -18,6 +18,7 @@ require 5.010;
 
 use Pod::Simple;
 use Pod::PodNG::Common;
+use Pod::PodNG::Node;
 
 use vars qw/@ISA/;
 
@@ -31,6 +32,8 @@ sub parse
   $self->{debug} = 1;
   # we do only parsing, no output, but just in case discard the output
   $self->output_string( $self->{_dummy_output} );
+
+  $self->{tree} = Pod::PodNG::Node->new( type => 'document', name => $input );
 
   if (-f $input)
     {
