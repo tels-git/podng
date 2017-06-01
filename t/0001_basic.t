@@ -2,7 +2,7 @@
 
 # Test that the main module can be loaded and used
 
-use Test::More tests => 2;
+use Test::More tests => 3;
 
 use lib 'lib';
 require_ok( 'Pod::PodNG' );
@@ -42,5 +42,8 @@ require_ok( 'Pod::PodNG' );
 my $podng = Pod::PodNG->new();
 
 isa_ok($podng, 'Pod::PodNG');
+
+my $rc = $podng->parse( 't/samples/small.pod' );
+is($rc // 0, '0');
 
 1;

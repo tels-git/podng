@@ -20,7 +20,12 @@ use warnings;
 
 require 5.010;
 
-use Pod::Simple;
+use Pod::PodNG::Common;
+use Pod::PodNG::Parser;
+
+use vars qw(@ISA);
+
+@ISA = qw/Pod::PodNG::Common/;
 
 #use Exporter;
 #use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
@@ -36,6 +41,8 @@ use Pod::Simple;
 sub new
   {
   my $self = bless {}, shift;
+
+  $self->{parser} = Pod::PodNG::Parser->new();
 
   $self->_init( @_ );
   }
@@ -54,6 +61,16 @@ sub parse
   {
   my ($self, $input) = @_;
 
+  # parse input and return result
+  $self->{parser}->parse($input);
+  }
+
+sub parse_file
+  {
+  my ($self, $input) = @_;
+
+  # parse input and return result
+  $self->{parser}->parse_file($input);
   }
 
 # everything is fine
@@ -73,7 +90,11 @@ Pod::PodNG - Extend POD with graphs, tables etc. and create nice HTML or PDF fro
 
 	my $podng = Pod::PodNG->new();
 
-	# TODO
+	$podng->parse( 'somefile.pod' );
+
+	my ($html, $css) = $podng->as_html();
+
+	$podng->write_html( 'outputdir', 'basename' );
 
 =head1 DESCRIPTION
 
