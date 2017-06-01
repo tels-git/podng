@@ -1,10 +1,7 @@
 #############################################################################
 #############################################################################
 #
-# Pod::PodNG::Parser - parse POD or PodNG into a memory structure
-#
-# While the input is any valid POD document, the parser understands many
-# extensions like graphs, tables, charts or ASCII art.
+# Pod::PodNG::Common - a common base class for Pod::PodNG modules
 #
 #############################################################################
 #############################################################################
@@ -15,16 +12,6 @@ use strict;
 use warnings;
 
 require 5.010;
-
-use Exporter;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $DEBUG);
-$DEBUG		= 1;
-@ISA		= qw(Exporter);
-@EXPORT		= ();
-@EXPORT_OK	= qw(log_debug log_info log_error);
-
-##%EXPORT_TAGS = ( DEFAULT => [qw(&func1)],
-#                 Both    => [qw(&func1 &func2)]);
 
 sub _error
   {
@@ -72,7 +59,7 @@ sub log_error
 
 =head1 NAME
 
-Pod::PodNG::Common - Common code for Pod::PodNG
+Pod::PodNG::Common - A common base class for Pod::PodNG modules
 
 =head1 SYNOPSIS
 
@@ -94,9 +81,19 @@ This is a common base class for all Pod::PodNG modules.
 
 =head1 METHODS
 
-TODO
+This base class provides the following methods:
 
-=head1 EXPORT
+=over 2
+
+=item * log_debug( @messages )
+
+=item * log_error( @messages )
+
+=item * log_info @messages )
+
+=back
+
+=head1 EXPORTS
 
 Nothing.
 
