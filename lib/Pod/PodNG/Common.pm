@@ -36,6 +36,33 @@ sub _init
   $self;
   }
 
+#############################################################################
+# generic getter/setter methods
+
+sub get
+  {
+  my ($self, $attr) = @_;
+
+  exists $self->{$attr} ? $self->{$attr} : undef;
+  }
+
+sub set
+  {
+  my ($self, $attr, $value) = @_;
+
+  if (exists $self->{$attr})
+    {
+    $self->{$attr} = $value;
+    return $self->{$attr};
+    }
+
+  # attribute does not exist
+  undef;
+  }
+
+#############################################################################
+# logging and error handling
+
 sub _error
   {
   my ($self, $error) = @_;
