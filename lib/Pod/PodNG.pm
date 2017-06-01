@@ -118,33 +118,5 @@ This function parses the input and stores the result in memory.
 
 This module exports nothing.
 
-=head1 SEE ALSO
-
-=head1 LIMITATIONS
-
-=head1 LICENSE
-
-This library is free software; you can redistribute it and/or modify
-it under the terms of the GPL 3.0 or a later version.
-
-See the LICENSE file for a copy of the GPL.
-
-This product includes color specifications and designs developed by Cynthia
-Brewer (http://colorbrewer.org/). See the LICENSE file for the full license
-text that applies to these color schemes.
-
-X<gpl>
-X<apache-style>
-X<cynthia>
-X<brewer>
-X<colorscheme>
-X<license>
-
-=head1 AUTHOR
-
-Copyright (C) 2016 - 2017 by Tels L<http://bloodgate.com>
-
-X<tels>
-
 =cut
 
