@@ -27,29 +27,14 @@ use vars qw(@ISA);
 
 @ISA = qw/Pod::PodNG::Common/;
 
-#use Exporter;
-#use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-#@ISA		= qw(Exporter);
-#@EXPORT		= ();
-#@EXPORT_OK	= ();
-##%EXPORT_TAGS = ( DEFAULT => [qw(&func1)],
-#                 Both    => [qw(&func1 &func2)]);
-
 #############################################################################
 # Initialize a new Pod::PodNG object
-
-sub new
-  {
-  my $self = bless {}, shift;
-
-  $self->{parser} = Pod::PodNG::Parser->new();
-
-  $self->_init( @_ );
-  }
 
 sub _init
   {
   my ($self, $args) = @_;
+
+  $self->{parser} = Pod::PodNG::Parser->new();
 
   $self;
   }
@@ -98,7 +83,28 @@ Pod::PodNG - Extend POD with graphs, tables etc. and create nice HTML or PDF fro
 
 =head1 DESCRIPTION
 
-TODO
+This module implements a new improved POD format, which is largely compatible with
+the normal POD format.
+
+The main new features are:
+
+=over 2
+
+=item * Re-use content by including other files, multiple times or even only once, even include only some sections
+
+=item * Define variables and use them with V<>
+
+=item * Easily add Hyperlinks with L<>
+
+=item * Add graphs (flowcharts), tables and charts, blockquotes or source code
+
+=item * Generates structurally sound HTML, which can be easily styled with CSS
+
+=item * By default, a nice-looking CSS is included
+
+=item * Make printing (for instance into PDF) easier and better looking
+
+=back
 
 =head1 EXAMPLES
 

@@ -13,6 +13,17 @@ use warnings;
 
 require 5.010;
 
+#############################################################################
+# The constructor
+
+sub new
+  {
+  my $self = bless {}, shift;
+
+  # call the class _init() routine
+  $self->_init( @_ );
+  }
+
 sub _error
   {
   my ($self, $error) = @_;
