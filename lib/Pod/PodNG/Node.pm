@@ -33,6 +33,9 @@ sub _init
   # either use the user-supplied name or generate something like "figure1"
   $self->{id} = $self->{name} // "$self->{type}$self->{idnr}";
 
+  $self->{description} = $attr->{description};	# if set, use this as a description of the content
+  $self->{content} = $attr->{content};		# if set, use this as content
+
   $self->{parent} = $attr->{parent};
 
   $self->{children} = [];	# no children yet

@@ -55,7 +55,7 @@ sub _init
 	encoding
 	colorscheme
 	comment
-	include includeonce
+	include includeonce ifincluded notincluded
 	table
 	graph
 	chart
@@ -79,7 +79,7 @@ sub _init
 sub _add_node_child
   {
   # add a node as child the current node, making it the new current node
-  my ($self, $tree, $node) = @_;
+  my ($self, $node) = @_;
 
   $self->{nodes} = { $node->{id} = $node };	# register the new node
 
@@ -115,7 +115,7 @@ sub parse
   # construct the tree and add the document to it as root
   $self->{tree} = Pod::PodNG::Node->new( type => 'document', id => '' );
   $self->{curnode} = $self->{tree};
-  $self->{nodes} = { $self->{tree}->{id} = $self->{tree} };
+  $self->{nodes} = { $self->{tree}->{id} => $self->{tree} };
 
   $self->{seen_includes} = {};
   $self->{include_stack} = {};
@@ -254,11 +254,93 @@ sub _open_file
   }
 
 #############################################################################
+# Parsing of content
+
+sub _parse_content_start
+  {
+  # Parse content like "::class Text" or "name ::class Text" or
+  # "::id_name Text" into the three parts name, css_class and the rest,
+  # where the first two are optional.
+  # In all cases below $input will start after "=begin table ".
+  # Examples:
+  #  =begin table
+  #  =begin table ::cssclass
+  #  =begin table ::cssclass [table1]
+  #  =begin table ::cssclass [table1] Description
+  #  =begin table [table1]
+  #  =begin table [table1] Description
+  #  =begin table [table1] ::cssclass Description
+
+  #  =for figure [fig1] ::cssclass F<Description|filename.png>
+  #  =for figure [fig1] ::cssclass F<filename.png> Description
+
+  #  =for boxart [fig1] ::cssclass Description
+
+  #  =for include ::-1 F<Description|filename.pod>
+  #  =for includeonce ::-1 F<Description|filename.pod>
+  #  =for includeonce filename.pod
+
+  #  =for todo [todo1] Some to do item text here.
+  #  =for todo [todo1] Do this: Description of what to do.
+
+  #  =begin todo [todo1] Do this
+  #  Description of what to do.
+  #  =end todo
+
+  #  =for comment This gets ignored.
+  #  =for author T. He Authore
+
+  my ($self, $input) = @_;
+
+  # no input?
+  return (undef, [], '') if !defined $input || $input =~ /^[\s\t]*$/;
+
+  print STDERR "[_parse_content_start]: '$input'\n";
+
+  my $name = undef;
+  my $classes = [];
+  my $seen = {};
+
+  while ($input =~ s/^(::[a-zA-Z][a-zA-Z0-9_]* |\[[a-zA-Z][a-zA-Z0-9_]*\])//)
+    {
+    my $what = $1;
+    if ($what =~ /^::(.*)$/)
+      {
+      my $c = $1;
+      $self->_die("Seen duplicate class in '$input'") if exists $seen->{$c};
+      $seen->{$c} = undef;
+      push @$classes, $c;	# remember the input order
+      }
+    else
+      {
+      $self->_die("Seen duplicate [name] in '$input'") if defined $name;
+      $name = $what;
+      $name =~ s/^\[//;
+      $name =~ s/\]$//;
+      }
+    }
+
+  ($name, $classes, $input);
+  }
+
+#############################################################################
 # Handling of section start and end
 
 sub _handle_start
   {
-  my ($self, $content) = @_;
+  my ($self, $type, $input, $isfor) = @_;
+
+  my ($name, $classes, $content) = $self->_parse_content_start( $input );
+
+  # if this is a "=for foobar Content", then "Content" is the entire content
+  # if this is a "=begin foobar Description", then "Description" is merely the description
+
+  my $description = $isfor ? undef : $content;
+  $content = $isfor ? $content : undef;
+
+  # create a new node and insert it as children in the current node
+  my $node = Pod::PodNG::Node->new( type => 'document', id => $name, class => $classes,
+				    description => $description, content => $content );
 
   }
 
@@ -314,19 +396,19 @@ sub _analyse_line
   return 1 unless $self->{curfile}->{in_pod};
 
   # now handle =begin, =end and =for
-  if ($line =~ /^=begin(.*)$/)
+  if ($line =~ /^=begin ([a-zA-Z]+)( .*)$/)
     {
-    return $self->_handle_start( $1 );
+    return $self->_handle_start( $1, $2 );
     }
 
-  if ($line =~ /^=for(.*)$/)
+  if ($line =~ /^=for ([a-zA-Z]+)( .*)$/)
     {
-    return $self->_handle_start( $1, 'for' );
+    return $self->_handle_start( $1, $2, 'for' );
     }
 
-  if ($line =~ /^=end(.*)$/)
+  if ($line =~ /^=end ([a-zA-Z]+)( .*)$/)
     {
-    return $self->_handle_end( $1 );
+    return $self->_handle_end( $1, $2 );
     }
 
   # if the line is empty, and we are currently in a for-section, end the section
@@ -337,6 +419,11 @@ sub _analyse_line
       return $self->_handle_end_for();
       }
     }
+
+  # TODO: handle =headX
+  # TODO: handle =over
+  # TODO: handle =back
+  # TODO: handle =item
 
   # Since the line is neither =begin, =end nor =for, we are inside a section, so
   # accumulate content until we are outside the section again
