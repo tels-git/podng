@@ -79,9 +79,11 @@ sub _error
 sub log_debug
   {
   my $self = shift;
+  my $level = shift;
+
   my $text = "DEBUG: " . (join("", @_, "\n"));
 
-  print STDERR $text if $self->{debug};
+  print STDERR $text if $self->{debug} >= $level;
   }
 
 sub log_info
@@ -96,6 +98,14 @@ sub log_error
   {
   my $self = shift;
   my $text = "ERROR: " . (join("", @_, "\n"));
+
+  print STDERR $text;
+  }
+
+sub log_warn
+  {
+  my $self = shift;
+  my $text = "WARNING: " . (join("", @_, "\n"));
 
   print STDERR $text;
   }
@@ -121,9 +131,10 @@ Pod::PodNG::Common - A common base class for Pod::PodNG modules
 
 	$self->{debug} = 1;
 
-	$self->log_debug( "Some debug info" );
+	$self->log_debug( 2, "Some debug info" );
 	$self->log_info( "Some info" );
 	$self->log_error( "Some error" );
+	$self->log_warning( "Some warning" );
 
 =head1 DESCRIPTION
 
@@ -135,11 +146,13 @@ This base class provides the following methods:
 
 =over 2
 
-=item * log_debug( @messages )
+=item * log_debug( $level, @messages )
 
 =item * log_error( @messages )
 
 =item * log_info @messages )
+
+=item * log_warn @messages )
 
 =back
 

@@ -27,7 +27,12 @@ sub _init
   # initialize ourself
   my ($self, $attr) = @_;
 
-  $self->{filename} = $attr->{name};
+  $self->{filename} = $attr->{name} // 'STDIN';
+  $self->{level_shift} = $attr->{level_shift} // 0;
+
+  # limit to -5 .. 5 (headlines goe from 1 .. 6, so a shift > |5| makes no difference)
+  $self->{level_shift} = -5 if $self->{level_shift} < -5;
+  $self->{level_shift} =  5 if $self->{level_shift} > 5;
 
   $self->{linenr} = 0;
   $self->{in_pod} = 0;		# not yet

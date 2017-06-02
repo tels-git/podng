@@ -20,11 +20,19 @@ use Pod::PodNG::Common;
 
 our @ISA = qw/Pod::PodNG::Common/;
 
+our $CURID = 1;		# to get consequtive IDs
+
 sub _init
   {
   my ($self, $attr) = @_;
 
-  $self->{name} = $attr->{name};
+  $self->{name} = $attr->{name};		# user-supplied id like "table1"
+  $self->{type} = $attr->{type};		# =begin table => 'table'
+  $self->{idnr} = $attr->{id} // $CURID++;	# get a new automatic nr for the id
+
+  # either use the user-supplied name or generate something like "figure1"
+  $self->{id} = $self->{name} // "$self->{type}$self->{idnr}";
+
   $self->{parent} = $attr->{parent};
 
   $self->{children} = [];	# no children yet
@@ -32,6 +40,21 @@ sub _init
   $self;
   }
 
+#############################################################################
+# public methods
+
+sub add_child
+  {
+  my ($self, $child) = @_;
+
+  push @{ $self->{children} }, $child;
+  $child->{parent} = $self;
+
+  $self;
+  }
+
+#############################################################################
+# internal helper routines
 
 sub _walk_depth
   {
