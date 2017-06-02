@@ -1,0 +1,321 @@
+=pod
+
+=encoding utf8
+
+=for colorscheme spectral9
+
+=head1 Spec
+
+This file contains one example for each feature that PODNG supports.
+
+The spec is not 100% compatible with L<PseudoPOD|ftp://ftp.ora.com/pub/labs/pseudopod.html>,
+but it follows it closely.
+
+Key differences are:
+
+=over 2
+
+=item * PodNG supports CSS classes on almost all blocks by starting the text with one or more "::classname ".
+
+These will not appear in the output. but instead be added as CSS class to the generated HTML tag.
+
+=item * PodNG allows identifiers for tables, pictures, graphs, charts etc.
+
+=item * PodNG supports variable replacement with VE<lt>E<gt> and B<=for var>
+
+=item * PodNG adds TODO-lists with C<< =for todo >> and C<< =begin todo/=end todo >>.
+
+=item * PodNG does not support HTML tables.
+
+Instead all tables are defined with ASCII chars where "--" and "==" denote row-delimiters and " | " (not the spaces" are column delimiters.
+
+=item * Index terms defined with XE<lt>E<gt> will also appear in the keywords or tags section
+
+=item * ZE<lt>E<gt> is not neccessary if the block already has a name, like tables or figures or pictures, the AE<lt>E<gt> can just reference it. You can also add ZE<lt>E<gt> at the start of =headX etc.
+
+=item * You can reference named blocks with LE<lt>#nameE<gt>
+
+=item * C<< =begin figure/=end figure >> are not yet supported (use C<< =for figure ::class ID TITLE instead >>)
+
+=item * Comments with C<< =for author >> etc. are not supported, comments should use C<< =for comment >>
+=back
+
+If you use a normal POD parser on this document, a few errors will appear,
+due to the following things that the normal POD format does not support:
+
+=over 2
+
+=item * =head5
+
+=item * =head6
+
+=item * AE<lt>references to sections>
+
+=item * ME<lt>first occuring terms>
+
+=item * TE<lt>first occuring terms>
+
+=item * UE<lt>first occuring terms>
+
+=item * VE<lt>variable>
+
+=item * Lists are not automatically renumbered
+
+=item * CSS classes will appear in the output as ::classname
+
+=item * Sub- and superscripts defined with _E<lt>E<gt> or ^E<lt>E<gt>
+
+=item * Including of files with C<< =for include >> and C<< = for include-once >>
+
+=item * Certain sections like:
+
+=over 4
+
+=item * todo
+
+=item * table
+
+=item * boxart
+
+=item * sourcecode / code / listing / literal
+
+=item * graph
+
+=item * chart
+
+=item * note
+
+=item * blockquote E<amp> author
+
+=back
+
+=back
+
+The next section should appear empty due to it only containing comments.
+
+=head2 Comments only
+
+=for comment This file contains one example for each feature that PODNG supports.
+
+=begin comment
+
+This is a multi-line comment,
+spanning multiple lines.
+
+=end comment
+
+=head1 Headlines
+
+=head2 Headline 2
+
+=head3 Headline 3
+
+=head4 Headline 4
+
+=head5 Headline 5
+
+=head6 Headline 6
+
+=head1 Lists
+
+List with over 2:
+
+=over 2
+
+=item * Some item 1
+
+=item * Some item 2
+
+=back
+
+List with over 4:
+
+=over 4
+
+=item *
+
+Some item 1
+with more text.
+
+=item *
+
+Some item 3
+with even more text.
+
+=back
+
+List with numbers (the numbering is done automatically):
+
+=over 2
+
+=item 1 Some number 1
+
+=item 1 Some number 2
+
+=item 1 Number 3
+
+=back
+
+=head2 Nested lists
+
+=over
+
+=item 1 Places to be
+
+There are some places you really should be:
+
+=over
+
+=item 1 Parks
+
+=item 1 Caves
+
+=item 1 Cities
+
+=back
+
+=item 2 Things to eat
+
+You could eat this things:
+
+=over
+
+=item 1 Nuts
+
+=item 1 Cakes
+
+=item 1 Bread
+
+=back
+
+=back
+
+=head1 Escape Sequences
+
+X<Keyword1> X<Keyword2>
+
+B<Bold text> B<< more bold text >>
+
+C<code text> C<< more code text >>
+
+I<italic text> I<< more italic text >>
+
+F<filename.txt> F<< another filename >>
+
+E<lt> E<< amp >>
+
+A first occuring M<term>, and another M<< one >>. You can also add M<Ding!|mouseover> texts.
+
+T<A citation> T<< A longer citation >>
+
+S<With  fixed  spacing> S<< more   fixed   witdh   spacing >>
+
+Hyperlink: L<http://example.com> L<< ftp://ftp.example.com >>
+Mailto: L<mailto:nouser@example.com> L<< mailto:nouser@example.com >>
+
+URL: U<http://example.com> U<< ftp://ftp.example.com >>
+
+Links with alternative text: L<Some Link|http://example.com/> L<< Some Link|ftp://example.com/ >>
+Email with alternative text: L<My email|mailto:nouser@example.com> L<< email|mailto:nouser@example.com >>
+
+Two references to the A<variables> (L<Variable substitution>) next section.
+
+Subscript: H_<2>O
+Superscript: MC^<2>
+
+A footnote N<will appear>.
+
+=head2 Variable substitution
+Z<variables>
+
+=for var VAR1 Variable
+
+This is a V<VAR1>.
+
+Formatting for replaceable things: C<< R<n> + 2 >> where R<n> is the number of loops.
+
+=head2 Index creation
+
+The term X<chicken> will appear in the keywords and in the index.
+
+=head1 Tables
+
+=begin table ::small table1 This text will appear in the table list.
+
+  Headrow 1 | Headrow 2 | Headrow 3
+=====================================
+  Col 1     | Col 2     | Col 3
+-------------------------------------
+  Col 1     | Col 2     | Col 3
+  (a)       | (b)       | (c)
+-------------------------------------
+-------------------------------------
+  Col 1
+-------------------------------------
+-------------------------------------
+-------------------------------------
+  Col 1     | Col 2     | Col 3
+=====================================
+  Headrow 1 | Headrow 2 | Headrow 3
+-------------------------------------
+  Col 1     | Col 2     | Col 3
+
+=end table
+
+A link to the table A<above|table1>.
+
+=head1 Sections
+
+The following different sections are supported:
+
+=head2 Blockquote
+
+=begin blockquote ::gray somequote
+
+The internet is for corn.
+
+=for author Gronkh
+
+=end blockquote
+
+=head2 Note
+
+=begin note somenote
+
+Remember to buy milk!
+
+=end note
+
+=head2 Sourcecode
+
+=begin sourcecode ::perl somequote
+
+#!/usr/bin/perl -w
+
+use strict;
+
+print "1 + 2 = ", (1+2), "\n";
+
+=end
+
+=head1 Colors
+
+Some text in F<::clr1 color 1>, F<::clr2 color 2>, F<::clr3 color 3>
+
+Some text with F<::bg1 background 1>, F<::bg2 background 2>, F<::bg3 background 3>, F<::bg4 background 4>
+
+The following section will have different colors than the main document:
+
+=for colorscheme set37
+
+=head2 Head 2
+
+=head3 Head 3
+
+A L<hyperlink|http://example.com>.
+
+Some text in F<::clr1 color 1>, F<::clr2 color 2>, F<::clr3 color 3>
+
+Some text with F<::bg1 background 1>, F<::bg2 background 2>, F<::bg3 background 3>, F<::bg4 background 4>
+
+=cut
