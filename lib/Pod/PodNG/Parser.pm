@@ -38,6 +38,7 @@ sub _init
 	 E	=> [     '',         '', 0, 'escape' ],
 	 F	=> [ 'span', 'filename', 0, 'filename' ],
 	 I	=> [    'i',         '', 0, 'italic text' ],
+	 K	=> [ 'span',      'key', 0, 'keyboard key like ESC' ],
 	 M	=> [ 'abbr',         '', 0, 'meaning (explain with mouseover)' ],
 	 N	=> [     '',         '', 0, 'footnote' ],
 	 P	=> [ 'span',  'product', 0, 'product name' ],
@@ -52,37 +53,68 @@ sub _init
 	};
 
   # the directives we accept:
-  $self->{directives} = map { $_ => undef } ( qw/
-	head1 head2 head3 head4 head5 head6
+  # Format:
+  #   source	=> [ handler, tag, css_class, wrap content in div?, description ]
+  $self->{directives} = {
+	head1		=> [ 'head', 'h1', '', 1, 'headline level 1' ],
+	head2		=> [ 'head', 'h2', '', 1, 'headline level 2' ],
+	head3		=> [ 'head', 'h3', '', 1, 'headline level 3' ],
+	head4		=> [ 'head', 'h4', '', 1, 'headline level 4' ],
+	head5		=> [ 'head', 'h5', '', 1, 'headline level 5' ],
+	head6		=> [ 'head', 'h6', '', 1, 'headline level 6' ],
 
-	encoding
-	colorscheme
-	comment
+	encoding	=> [ 'encoding' ],
+	colorscheme	=> [ 'colorscheme' ],
 
-	include includeonce ifincluded notincluded
+	comment		=> [ 'comment' ],
 
-	table
-	graph graph-common
-	chart
+	include		=> [ 'include' ],
+	includeonce	=> [ 'include' ],
+	ifincluded	=> [ 'ifinclude' ],
+	notincluded	=> [ 'notincluded' ],
 
-	text asciiart
-	boxart
+	table		=> [ 'table' ],
 
-	code sourcecode listing
-	shell
-	blockquote
-	note
+	graph		=> [ 'graph' ],
 
-	figure img
+	graphcommon	=> [ 'graphcommon' ],
 
-	author
-	over item back
-	var
-	todo
-	hr br
-	toc
-	pagebreak ff
-	/ );
+	chart		=> [ 'chart' ],
+
+	text		=> [ 'text' ],
+
+	asciiart	=> [ 'asciiart' ],
+	boxart		=> [ 'boxart' ],
+
+	code		=> [ 'code', 	   'pre',       '', 0, 'pre-formatted paragraph' ],
+	sourcecode	=> [ 'sourcecode', 'pre', 'source', 0, 'pre-formatted paragraph with syntax-highlighting' ],
+	listing		=> [ 'listing',	   'pre', 'source', 0, 'pre-formatted paragraph with syntax-highlighting' ],
+	shell		=> [ 'shell',	   'pre',  'shell', 0, 'pre-formatted paragraph with shell code and syntax-highlighting' ],
+
+	note		=> [ 'note', 	   'div',          'note', 0, 'a note' ],
+	blockquote	=> [ 'blockquote', 'blockquote',       '', 0, 'a blockquote' ],
+	author		=> [ 'author',	   'span',       'author', 0, 'the author of a blockquote' ],
+
+	figure		=> [ 'figure',	 'figure', '', 0, 'A figure or image' ],
+	img		=> [ 'figure',	 'img',    '', 0, 'Link to an external image file' ],
+
+	over		=> [ 'liststart', '', '', 0, 'Begin of a list' ],
+	item		=> [ 'listitem',  '', '', 0, 'Item in a list' ],
+	back		=> [ 'listend',	  '', '', 0, 'End of a list' ],
+
+	var		=> [ 'var',	  '', '', 0, 'Define a variable' ],
+
+	todo		=> [ 'todo',	  '', '', 0, 'Define a TODO entry' ],
+
+	hr		=> [ 'hr',	 'hr', '', 0, 'A horizontal line' ],
+	br		=> [ 'br',	 'br', '', 0, 'A spacer' ],
+
+	toc		=> [ 'toc',	 '', '', 0, 'Include the table of contents here' ],
+
+	ff		=> [ 'pagebreak', 'span', 'pagebreak', 0, 'pagebreak for printing or PDF output' ],
+	pagebreak	=> [ 'pagebreak', 'span', 'pagebreak', 0, 'pagebreak for printing or PDF output' ],
+
+	};
 
   $self->{tree} = Pod::PodNG::Node->new( type => 'document', id => '', is_root => 1 );
 
