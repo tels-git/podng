@@ -29,46 +29,62 @@ sub _init
   {
   my ($self, $attr) = @_;
 
-  # The codes we accept:
+  # The codes we accept. Format is:
+  # Letter => [ html tag, default CSS class, does user-class removes default class?, description ]
   $self->{codes} = {
-	 A	=> 'cross-reference to an anchor declared with Z<>',
-	 B	=> 'bold',
-	 C	=> 'monospaced',
-	 E	=> 'escape',
-	 F	=> 'filename',
-	 I	=> 'italic',
-	 M	=> 'meaning (explain with mouseover)',
-	 N	=> 'footnote',
-	 R	=> 'replaceable thing',
-	 T	=> 'citation or text with a class',
-	 U	=> 'URL',
-	 V	=> 'variable',
-	 X	=> 'index entry',
-	 Z	=> 'cross-reference endpoint',
-	 _	=> 'subscript',
-	'^'	=> 'superscript',
+	 A	=> [     '',         '', 0, 'cross-reference to an anchor declared with Z<>' ],
+	 B	=> [   'em',         '', 0, 'bold text' ],
+	 C	=> [ 'code',         '', 0, 'monospaced text' ],
+	 E	=> [     '',         '', 0, 'escape' ],
+	 F	=> [ 'span', 'filename', 0, 'filename' ],
+	 I	=> [    'i',         '', 0, 'italic text' ],
+	 M	=> [ 'abbr',         '', 0, 'meaning (explain with mouseover)' ],
+	 N	=> [     '',         '', 0, 'footnote' ],
+	 P	=> [ 'span',  'product', 0, 'product name' ],
+	 R	=> [ 'span',  'replace', 0, 'replaceable thing' ],
+	 T	=> [ 'span',     'cite', 1, 'citation, or text with custom class' ],
+	 U	=> [    'a',      'url', 1, 'URL' ],
+	 V	=> [     '',         '', 0, 'variable' ],
+	 X	=> [     '',         '', 0, 'index entry' ],
+	 Z	=> [     '',         '', 0, 'cross-reference endpoint' ],
+	 _	=> [  'sub',         '', 0, 'subscript' ],
+	'^'	=> [  'sup',         '', 0, 'superscript' ],
 	};
 
   # the directives we accept:
   $self->{directives} = map { $_ => undef } ( qw/
 	head1 head2 head3 head4 head5 head6
+
 	encoding
 	colorscheme
 	comment
+
 	include includeonce ifincluded notincluded
+
 	table
-	graph
+	graph graph-common
 	chart
+
 	text asciiart
 	boxart
+
 	code sourcecode listing
+	shell
 	blockquote
+	note
+
+	figure img
+
 	author
 	over item back
 	var
 	todo
 	hr br
+	toc
+	pagebreak ff
 	/ );
+
+  $self->{tree} = Pod::PodNG::Node->new( type => 'document', id => '', is_root => 1 );
 
   $self;
   }
@@ -112,8 +128,10 @@ sub parse
 
   $self->{debug} = 1;
 
+  $self->{tree}->cleanup() if $self->{tree};		# remove all nodes and children
+
   # construct the tree and add the document to it as root
-  $self->{tree} = Pod::PodNG::Node->new( type => 'document', id => '' );
+  $self->{tree} = Pod::PodNG::Node->new( type => 'document', id => '', is_root => 1 );
   $self->{curnode} = $self->{tree};
   $self->{nodes} = { $self->{tree}->{id} => $self->{tree} };
 
@@ -169,6 +187,15 @@ sub parse_string_document
     }
 
   $self->_clean_up();
+  }
+
+
+sub tree
+  {
+  # return the resulting parse-tree
+  my ($self) = @_;
+
+  $self->{tree};
   }
 
 #############################################################################
@@ -471,6 +498,8 @@ sub _clean_up
   delete $self->{seen_includes};
   delete $self->{include_stack};
   delete $self->{linestack};
+
+  $self->{tree}->cleanup();		# remove all nodes and children
 
   $self;
   }

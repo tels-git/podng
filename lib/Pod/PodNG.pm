@@ -59,6 +59,13 @@ sub parse_file
   $self->{parser}->parse_file($input);
   }
 
+sub as_html
+  {
+  my ($self) = @_;
+
+  $self->{parser}->tree()->as_html();
+  }
+
 # everything is fine
 1;
 

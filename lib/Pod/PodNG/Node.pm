@@ -37,9 +37,16 @@ sub _init
   $self->{content} = $attr->{content};		# if set, use this as content
 
   $self->{parent} = $attr->{parent};
+  $self->{is_root} = ($attr->{is_root} // (defined $attr->{parent} ? 1 : 0)) ? 1 : 0;
 
   $self->{children} = [];	# no children yet
 
+  $self->{html} =
+	{
+		tag => 'span',
+		class => '',
+		skip => 1,
+	};
   $self;
   }
 
@@ -52,6 +59,29 @@ sub add_child
 
   push @{ $self->{children} }, $child;
   $child->{parent} = $self;
+
+  $self;
+  }
+
+sub set_parent
+  {
+  my ($self, $parent) = @_;
+
+  $self->{parent} = $parent;
+  $self->{is_root} = defined $parent ? 1 : 0;
+
+  $self;
+  }
+
+sub cleanup
+  {
+  my ($self) = @_;
+
+  for my $child (@{$self->{children}})
+    {
+    $child->cleanup();
+    }
+  delete $self->{children};
 
   $self;
   }
@@ -74,6 +104,9 @@ sub _walk_depth
   # return
   $self;
   }
+
+#############################################################################
+# Output routines: POD
 
 sub _as_pod
   {
@@ -104,6 +137,93 @@ sub as_pod
   # return the result
   $self->{_out_pod};
   }
+
+
+#############################################################################
+# Output routines: HTML
+
+sub _html_header
+  {
+  # return the HTML <head> tags etc.
+  my ($self) = @_;
+
+my $tpl = <<EOF
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">"
+<html>
+  <head>
+##HEADER##
+  </head>
+  <body>
+EOF
+;
+
+  $tpl =~ s/##HEADER##//;
+
+  $tpl;
+  }
+
+sub _html_footer
+  {
+  # return the HTML </head> tags etc.
+  my ($self) = @_;
+
+  "  </body>\n</html>\n";
+  }
+
+sub _as_html_start
+  {
+  # Return the node's begin as HTML
+  my ($self) = @_;
+
+  my $html = $self->{html};
+
+  my $class = defined $html->{class} ? ' class="' . $html->{class} . '"' : '';
+
+  if ($html->{single_tag})
+    {
+    return "<$html->{tag} />";
+    }
+
+  "<$html->{tag}$class>";
+  }
+
+sub _as_html_end
+  {
+  # Return the node's end as HTML
+  my ($self) = @_;
+
+  my $html = $self->{html};
+
+  my $class = defined $html->{class} ? ' class="' . $html->{class} . '" ' : '';
+
+  return '' if $html->{single_tag};
+
+  "</$html->{tag}>\n";
+  }
+
+sub as_html
+  {
+  # Return the node and all it's children as HTML
+  my ($self) = @_;
+
+  my $html = $self->{is_root} ? $self->_html_header() : '';
+
+  $html .= $self->_as_html_start();
+
+  # add all children
+  for my $child (@{$self->{children}})
+    {
+    $html .= $child->as_html();
+    }
+
+  $html .= $self->_as_html_end();
+
+  $html .= $self->{is_root} ? $self->_html_footer() : '';
+
+  # return the result
+  $html;
+  }
+
 
 # everything is fine
 1;
