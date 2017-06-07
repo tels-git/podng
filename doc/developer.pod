@@ -1,0 +1,68 @@
+=pod
+
+=head1 Introduction
+
+Pod::PodNG is a Perl module, which can be used as-is, e.g. it does not need
+to be build or compiled.
+
+However, you can also build and install it, this enable the C<podng> utility
+to be used system-wide.
+
+The source code on GitHub differs from the released archive on CPAN quite
+a bit, and all the differences are added during a build-and-release cycle.
+
+To build, test and release a version, C<Dist::Zilla> is used. Controlling
+options for the build are in F<dist.ini>.
+
+=head2 Prerequisites
+
+To develop or test the module, you need the following packages installed:
+
+=over
+
+=item git
+
+=item Perl
+
+=item Dist::Zilla
+
+=item Various Dist::Zilla plugins
+
+=back
+
+Here is an example command to install these on a Debian-based system:
+
+  sudo aptitude install git perl perldoc perl-modules libdist-zilla-perl \
+	libterm-ui-perl libdist-zilla-plugin-git-perl libdist-zilla-plugin-podweaver-perl
+
+=head2 Checkout
+
+Clone the Github repository:
+
+ git checkout https://github.com/tels-git/podng.git
+
+=head2 Building
+
+Just issue:
+
+ dzil build
+
+This will build the module by modifying the F<.pm>-files and build a .tar.gz bundle.
+
+=head2 Testing
+
+After each change, run the testsuite with:
+
+ prove -lr t/
+
+If all tests pass, you have at least not made things worse. Congratulations!
+
+=head2 Release
+
+A full release can be done with:
+
+ dzil release
+
+This will push the .tar.gz to CPAN (via PAUSE) and GitHub.
+
+=cut
