@@ -43,6 +43,7 @@ sub _init
 	 N	=> [     '',         '', 0, 'footnote' ],
 	 P	=> [ 'span',  'product', 0, 'product name' ],
 	 R	=> [ 'span',  'replace', 0, 'replaceable thing' ],
+	 S	=> [ 'span',      'nbs', 0, 'text wiht fixed spaces' ],
 	 T	=> [ 'span',     'cite', 1, 'citation, or text with custom class' ],
 	 U	=> [    'a',      'url', 1, 'URL' ],
 	 V	=> [     '',         '', 0, 'variable' ],
@@ -52,10 +53,11 @@ sub _init
 	'^'	=> [  'sup',         '', 0, 'superscript' ],
 	};
 
-  # the directives we accept:
+  # the directives we accept with "=NAME":
   # Format:
   #   source	=> [ handler, tag, css_class, wrap content in div?, description ]
   $self->{directives} = {
+
 	head1		=> [ 'head', 'h1', '', 1, 'headline level 1' ],
 	head2		=> [ 'head', 'h2', '', 1, 'headline level 2' ],
 	head3		=> [ 'head', 'h3', '', 1, 'headline level 3' ],
@@ -64,55 +66,63 @@ sub _init
 	head6		=> [ 'head', 'h6', '', 1, 'headline level 6' ],
 
 	encoding	=> [ 'encoding' ],
-	colorscheme	=> [ 'colorscheme' ],
-
-	comment		=> [ 'comment' ],
-
-	include		=> [ 'include' ],
-	includeonce	=> [ 'include' ],
-	ifincluded	=> [ 'ifinclude' ],
-	notincluded	=> [ 'notincluded' ],
-
-	table		=> [ 'table' ],
-
-	graph		=> [ 'graph' ],
-
-	graphcommon	=> [ 'graphcommon' ],
-
-	chart		=> [ 'chart' ],
-
-	text		=> [ 'text' ],
-
-	asciiart	=> [ 'asciiart' ],
-	boxart		=> [ 'boxart' ],
-
-	code		=> [ 'code', 	   'pre',       '', 0, 'pre-formatted paragraph' ],
-	sourcecode	=> [ 'sourcecode', 'pre', 'source', 0, 'pre-formatted paragraph with syntax-highlighting' ],
-	listing		=> [ 'listing',	   'pre', 'source', 0, 'pre-formatted paragraph with syntax-highlighting' ],
-	shell		=> [ 'shell',	   'pre',  'shell', 0, 'pre-formatted paragraph with shell code and syntax-highlighting' ],
-
-	note		=> [ 'note', 	   'div',          'note', 0, 'a note' ],
-	blockquote	=> [ 'blockquote', 'blockquote',       '', 0, 'a blockquote' ],
-	author		=> [ 'author',	   'span',       'author', 0, 'the author of a blockquote' ],
-
-	figure		=> [ 'figure',	 'figure', '', 0, 'A figure or image' ],
-	img		=> [ 'figure',	 'img',    '', 0, 'Link to an external image file' ],
 
 	over		=> [ 'liststart', '', '', 0, 'Begin of a list' ],
 	item		=> [ 'listitem',  '', '', 0, 'Item in a list' ],
 	back		=> [ 'listend',	  '', '', 0, 'End of a list' ],
+  };
+  # The blocks we accept with =begin, =end or =for:
+  # Format:
+  #   source	=> [ type, handler, tag, css_class, wrap content in div?, description ]
+  # type => 1 => =begin/=end
+  #         2 => =for
+  #         3 => both =for and =begin/=end
+  $self->{blocks} = {
+	colorscheme	=> [ 2, 'colorscheme' ],
 
-	var		=> [ 'var',	  '', '', 0, 'Define a variable' ],
+	include		=> [ 2, 'include' ],
+	includeonce	=> [ 2, 'include' ],
+	ifincluded	=> [ 2, 'ifinclude' ],
+	notincluded	=> [ 2, 'notincluded' ],
 
-	todo		=> [ 'todo',	  '', '', 0, 'Define a TODO entry' ],
+	comment		=> [ 3, 'comment' ],
 
-	hr		=> [ 'hr',	 'hr', '', 0, 'A horizontal line' ],
-	br		=> [ 'br',	 'br', '', 0, 'A spacer' ],
+	table		=> [ 1, 'table' ],
 
-	toc		=> [ 'toc',	 '', '', 0, 'Include the table of contents here' ],
+	graph		=> [ 1, 'graph' ],
 
-	ff		=> [ 'pagebreak', 'span', 'pagebreak', 0, 'pagebreak for printing or PDF output' ],
-	pagebreak	=> [ 'pagebreak', 'span', 'pagebreak', 0, 'pagebreak for printing or PDF output' ],
+	chart		=> [ 1, 'chart' ],
+
+	graphcommon	=> [ 3, 'graphcommon' ],
+
+	text		=> [ 3, 'text' ],
+
+	asciiart	=> [ 3, 'asciiart' ],
+	boxart		=> [ 3, 'boxart' ],
+
+	code		=> [ 3, 'code', 	   'pre',       '', 0, 'pre-formatted paragraph' ],
+	sourcecode	=> [ 3, 'sourcecode', 'pre', 'source', 0, 'pre-formatted paragraph with syntax-highlighting' ],
+	listing		=> [ 3, 'listing',	   'pre', 'source', 0, 'pre-formatted paragraph with syntax-highlighting' ],
+	shell		=> [ 3, 'shell',	   'pre',  'shell', 0, 'pre-formatted paragraph with shell code and syntax-highlighting' ],
+
+	note		=> [ 3, 'note', 	   'div',          'note', 0, 'a note' ],
+	blockquote	=> [ 3, 'blockquote', 'blockquote',       '', 0, 'a blockquote' ],
+	author		=> [ 3, 'author',	   'span',       'author', 0, 'the author of a blockquote' ],
+
+	figure		=> [ 3, 'figure',	 'figure', '', 0, 'A figure or image' ],
+	img		=> [ 3, 'figure',	 'img',    '', 0, 'Link to an external image file' ],
+
+	todo		=> [ 3, 'todo',	  '', '', 0, 'Define a TODO entry' ],
+
+	var		=> [ 2, 'var',	  '', '', 0, 'Define a variable' ],
+
+	hr		=> [ 2, 'hr',	 'hr', '', 0, 'A horizontal line' ],
+	br		=> [ 2, 'br',	 'br', '', 0, 'A spacer' ],
+
+	toc		=> [ 2, 'toc',	 '', '', 0, 'Include the table of contents here' ],
+
+	ff		=> [ 2, 'pagebreak', 'span', 'pagebreak', 0, 'pagebreak for printing or PDF output' ],
+	pagebreak	=> [ 2, 'pagebreak', 'span', 'pagebreak', 0, 'pagebreak for printing or PDF output' ],
 
 	};
 
@@ -405,6 +415,7 @@ sub _handle_start
 
 sub _handle_end
   {
+  # We saw the end of a directive (either =end, or the next paragraph)
   my ($self, $content) = @_;
 
   }
@@ -428,7 +439,7 @@ sub _analyse_line
   $line =~ s/[\r\n]+$//;		# remove the line-end
 
   ###########################################################################
-  # Handling of =pod and =cut
+  # Handling of =pod, =cut, =encoding
 
   if ($line =~ /^=pod(.*)\z/)
     {
@@ -454,17 +465,60 @@ sub _analyse_line
   # only continue if we are inside POD
   return 1 unless $self->{curfile}->{in_pod};
 
+  ###########################################################################
+  # Handling of =encoding
+
+  if ($line =~ /^=encoding (.*)\z/)
+    {
+    $self->log_info("Seen =encoding");
+    my $encoding = 'utf-8';
+    $self->_error( "=encoding $encoding not yet supported" ) unless $encoding eq 'utf-8';
+    $self->{encoding} = $encoding;
+    return 1;
+    }
+
+  ###########################################################################
+  # Handling of =headX
+
+  if ($line =~ /^=(head[1-6])(.*)\z/)
+    {
+    my $type = $1; my $suffix = $2;
+    return $self->_handle_start( $type, $suffix );
+    }
+
+  ###########################################################################
+  # Handling of =over, =item and =back
+
+  if ($line =~ /^=over(.*)\z/)
+    {
+    my $level = $1;
+    $self->log_info("Seen =over");
+    return $self->_handle_start( '=over', $level );
+    }
+  if ($line =~ /^=item(.*)\z/)
+    {
+    my $item = $1;
+    $self->log_info("Seen =item");
+    return $self->_handle_start( '=item', $item );
+    }
+  if ($line =~ /^=back(.*)\z/)
+    {
+    my $suffix = $1;
+    $self->log_info("Seen =back");
+    return $self->_handle_end( '=back', $suffix );
+    }
+
+  ###########################################################################
   # now handle =begin, =end and =for
+
   if ($line =~ /^=begin ([a-zA-Z]+)( .*)$/)
     {
     return $self->_handle_start( $1, $2 );
     }
-
   if ($line =~ /^=for ([a-zA-Z]+)( .*)$/)
     {
     return $self->_handle_start( $1, $2, 'for' );
     }
-
   if ($line =~ /^=end ([a-zA-Z]+)( .*)$/)
     {
     return $self->_handle_end( $1, $2 );
@@ -479,16 +533,11 @@ sub _analyse_line
       }
     }
 
-  # TODO: handle =headX
-  # TODO: handle =over
-  # TODO: handle =back
-  # TODO: handle =item
-
   # Since the line is neither =begin, =end nor =for, we are inside a section, so
   # accumulate content until we are outside the section again
   push @{ $self->{linestack} }, $line;
 
-  # TODO: add the actual parsing
+  # TODO: add the actual parsing of paragraphs
   print STDERR "_analyse_line: $line\n";
 
   # return 1 to signal "ok, continue"

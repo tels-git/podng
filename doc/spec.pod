@@ -8,6 +8,8 @@
 
 This file contains one example for each feature that PODNG supports.
 
+=head2 PodNG vs. PseudoPOD
+
 The spec is not 100% compatible with L<PseudoPOD|ftp://ftp.ora.com/pub/labs/pseudopod.html>,
 but it follows it closely.
 
@@ -40,7 +42,9 @@ Instead all tables are defined with ASCII chars where "--" and "==" denote row-d
 =item * Comments with C<< =for author >> etc. are not supported, comments should use C<< =for comment >>
 =back
 
-If you use a normal POD parser on this document, a few errors will appear,
+=head2 PodNG vs. POD
+
+If you use a normal C<POD> parser on this document, a few errors will appear,
 due to the following things that the normal POD format does not support:
 
 =over 2
@@ -84,6 +88,8 @@ due to the following things that the normal POD format does not support:
 =item * chart
 
 =item * note
+
+=item * list
 
 =item * blockquote E<amp> author
 
@@ -202,13 +208,15 @@ I<italic text> I<< more italic text >>
 
 F<filename.txt> F<< another filename >>
 
+P<ProductName> P<< Some Cool Product™ >>
+
 E<lt> E<< amp >>
 
 A first occuring M<term>, and another M<< one >>. You can also add M<Ding!|mouseover> texts.
 
 T<A citation> T<< A longer citation >>
 
-S<With  fixed  spacing> S<< more   fixed   witdh   spacing >>
+S<With  fixed  spacing> S<< more   fixed   width   spacing >>
 
 Hyperlink: L<http://example.com> L<< ftp://ftp.example.com >>
 Mailto: L<mailto:nouser@example.com> L<< mailto:nouser@example.com >>
@@ -216,14 +224,14 @@ Mailto: L<mailto:nouser@example.com> L<< mailto:nouser@example.com >>
 URL: U<http://example.com> U<< ftp://ftp.example.com >>
 
 Links with alternative text: L<Some Link|http://example.com/> L<< Some Link|ftp://example.com/ >>
-Email with alternative text: L<My email|mailto:nouser@example.com> L<< email|mailto:nouser@example.com >>
+Email with alternative text: L<My email|mailto:nouser@example.com> L<< email|mailto:none@example.com >>
 
 Two references to the A<variables> (L<Variable substitution>) next section.
 
 Subscript: H_<2>O
 Superscript: MC^<2>
 
-A footnote N<will appear>.
+A footnoteN<Will explain more.>.
 
 =head2 Variable substitution
 Z<variables>
@@ -288,13 +296,19 @@ Remember to buy milk!
 
 =head2 Sourcecode
 
-=begin sourcecode ::perl somequote
+=begin sourcecode [perlcode] ::perl A simple program
 
 #!/usr/bin/perl -w
 
 use strict;
 
 print "1 + 2 = ", (1+2), "\n";
+
+=end
+
+=begin listing ::python
+
+Python here!
 
 =end
 
