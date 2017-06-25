@@ -21,12 +21,10 @@ use utf8;
 
 require 5.010;
 
-use Pod::PodNG::Common;
+use base 'Pod::PodNG::Common';
+
 use Pod::PodNG::Parser;
 
-use vars qw(@ISA);
-
-@ISA = qw/Pod::PodNG::Common/;
 
 #############################################################################
 # Initialize a new Pod::PodNG object

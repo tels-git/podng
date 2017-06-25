@@ -16,9 +16,7 @@ use warnings;
 
 require 5.010;
 
-use Pod::PodNG::Common;
-
-our @ISA = qw/Pod::PodNG::Common/;
+use base 'Pod::PodNG::Common';
 
 our $CURID = 1;		# to get consecutive IDs
 

@@ -123,11 +123,16 @@ Pod::PodNG::Common - A common base class for Pod::PodNG modules
 
 =head1 SYNOPSIS
 
-	use Pod::PodNG::Common;
+	use base 'Pod::PodNG::Common';
 
-	use vars qw/@ISA/;
+	sub _init {
+	  my ($self, $args) = @_;
 
-	@ISA = qw/Pod::PodNG::Common/;
+	  # copy from $args to $self, initialize other things here
+
+	  # return $self
+	  $self;
+	}
 
 	$self->{debug} = 1;
 

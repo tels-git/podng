@@ -16,11 +16,7 @@ use warnings;
 
 require 5.010;
 
-use Pod::PodNG::Common;
-
-use vars qw/@ISA/;
-
-@ISA = qw/Pod::PodNG::Common/;
+use base 'Pod::PodNG::Common';
 
 sub _init
   {

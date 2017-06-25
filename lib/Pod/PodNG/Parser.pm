@@ -17,13 +17,10 @@ use utf8;
 
 require 5.010;
 
-use Pod::PodNG::Common;
+use base 'Pod::PodNG::Common';
+
 use Pod::PodNG::Node;
 use Pod::PodNG::File;
-
-use vars qw/@ISA/;
-
-@ISA = qw/Pod::PodNG::Common/;
 
 sub _init
   {
