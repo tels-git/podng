@@ -32,8 +32,8 @@ sub _init
   # either use the user-supplied name or generate something like "figure1"
   $self->{id} = $self->{name} // "$self->{type}$self->{idnr}";
 
-  $self->{description} = $attr->{description};	# if set, use this as a description of the content
-  $self->{content} = $attr->{content};		# if set, use this as content
+  $self->{description} = $attr->{description} // '';	# if set, use as description of the content
+  $self->{content} = $attr->{content} // '';		# if set, use this as content
 
   $self->{is_for} = $attr->{is_for} ? 1 : 0;		# this node is a =for directive
   $self->{level} = $attr->{level} ? $attr->{level} : 0;	# the head-level depth
@@ -47,13 +47,12 @@ sub _init
 
   my $p = ref $self->{parent} ? $self->{parent}->{id} : 'none';
 
-  $self->log_info( "Creating Node $self->{id} (parent $p)" );
+  $self->log_info( "Creating Node $self->{id} ($self->{description}) (parent $p)" );
 
   $self->{html} =
 	{
-		tag => 'span',
-		class => '',
-		skip => 1,
+		tag => $attr->{tag} // 'span',
+		class => $attr->{class} // [],
 	};
   $self;
   }
