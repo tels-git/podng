@@ -45,6 +45,10 @@ sub _init
 
   $self->{linestack} = [];	# extra raw content, to be parsed
 
+  my $p = ref $self->{parent} ? $self->{parent}->{id} : 'none';
+
+  $self->log_info( "Creating Node $self->{id} (parent $p)" );
+
   $self->{html} =
 	{
 		tag => 'span',
