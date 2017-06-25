@@ -17,6 +17,7 @@ use warnings;
 require 5.010;
 
 use base 'Pod::PodNG::Common';
+use Pod::PodNG::Node::HTML;
 
 our $CURID = 1;		# to get consecutive IDs
 
@@ -246,7 +247,7 @@ sub as_html
 
 =head1 NAME
 
-Pod::PodNG::Node - Represent a part of the POD or PODNG document
+Pod::PodNG::Node - Represents a part of the POD or PODNG document
 
 =head1 SYNOPSIS
 
@@ -254,9 +255,11 @@ Pod::PodNG::Node - Represent a part of the POD or PODNG document
 
 	my $node = Pod::PodNG::Node->new( name => 'head1', content => 'Headline' );
 
+	print $node->as_pod();
+
 =head1 DESCRIPTION
 
-TODO
+Represents a part of the POD or PODNG document.
 
 =head1 EXAMPLES
 
@@ -271,6 +274,10 @@ Create a new Pod::PodNG::Node object.
 =head2 as_pod()
 
 Return the node and all its children as POD.
+
+=head2 as_html()
+
+Return the node and all its children as HTML code.
 
 =head1 EXPORT
 
