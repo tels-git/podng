@@ -1,5 +1,7 @@
 =pod
 
+=encoding utf-8
+
 =head1 Headline
 
 A small POD document for testing the parser and output.

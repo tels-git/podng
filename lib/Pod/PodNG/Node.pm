@@ -20,7 +20,7 @@ use Pod::PodNG::Common;
 
 our @ISA = qw/Pod::PodNG::Common/;
 
-our $CURID = 1;		# to get consequtive IDs
+our $CURID = 1;		# to get consecutive IDs
 
 sub _init
   {
@@ -36,10 +36,15 @@ sub _init
   $self->{description} = $attr->{description};	# if set, use this as a description of the content
   $self->{content} = $attr->{content};		# if set, use this as content
 
+  $self->{is_for} = $attr->{is_for} ? 1 : 0;		# this node is a =for directive
+  $self->{level} = $attr->{level} ? $attr->{level} : 0;	# the head-level depth
+
   $self->{parent} = $attr->{parent};
   $self->{is_root} = ($attr->{is_root} // (defined $attr->{parent} ? 1 : 0)) ? 1 : 0;
 
   $self->{children} = [];	# no children yet
+
+  $self->{linestack} = [];	# extra raw content, to be parsed
 
   $self->{html} =
 	{
@@ -69,6 +74,15 @@ sub set_parent
 
   $self->{parent} = $parent;
   $self->{is_root} = defined $parent ? 1 : 0;
+
+  $self;
+  }
+
+sub add_content
+  {
+  my ($self, $content) = @_;
+
+  push @{ $self->{linestack} }, @$content;
 
   $self;
   }
@@ -148,7 +162,7 @@ sub _html_header
   my ($self) = @_;
 
 my $tpl = <<EOF
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">"
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
   <head>
 ##HEADER##

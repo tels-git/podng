@@ -71,19 +71,19 @@ sub _init
 	item		=> [ 'listitem',  '', '', 0, 'Item in a list' ],
 	back		=> [ 'listend',	  '', '', 0, 'End of a list' ],
   };
-  # The blocks we accept with =begin, =end or =for:
+  # The sections (directives) we accept with =begin, =end or =for:
   # Format:
   #   source	=> [ type, handler, tag, css_class, wrap content in div?, description ]
   # type => 1 => =begin/=end
   #         2 => =for
   #         3 => both =for and =begin/=end
-  $self->{blocks} = {
+  $self->{sections} = {
 	colorscheme	=> [ 2, 'colorscheme' ],
 
 	include		=> [ 2, 'include' ],
 	includeonce	=> [ 2, 'include' ],
-	ifincluded	=> [ 2, 'ifinclude' ],
-	notincluded	=> [ 2, 'notincluded' ],
+	ifincluded	=> [ 1, 'ifinclude' ],
+	notincluded	=> [ 1, 'notincluded' ],
 
 	comment		=> [ 3, 'comment' ],
 
@@ -126,7 +126,9 @@ sub _init
 
 	};
 
-  $self->{tree} = Pod::PodNG::Node->new( type => 'document', id => '', is_root => 1 );
+  $self->{qr_section_name} = qr/^([A-Za-z][a-zA-Z0-9]+) /;
+
+  $self->{tree} = Pod::PodNG::Node->new( type => 'document', is_root => 1 );
 
   $self;
   }
@@ -173,7 +175,7 @@ sub parse
   $self->{tree}->cleanup() if $self->{tree};		# remove all nodes and children
 
   # construct the tree and add the document to it as root
-  $self->{tree} = Pod::PodNG::Node->new( type => 'document', id => '', is_root => 1 );
+  $self->{tree} = Pod::PodNG::Node->new( type => 'document', is_root => 1 );
   $self->{curnode} = $self->{tree};
   $self->{nodes} = { $self->{tree}->{id} => $self->{tree} };
 
@@ -225,7 +227,7 @@ sub parse_string_document
 
   for my $line (@lines)
     {
-    $self->_analyze_line($line);
+    $self->_analyse_line($line);
     }
 
   $self->_clean_up();
@@ -339,11 +341,14 @@ sub _parse_content_start
   #  =begin table [table1]
   #  =begin table [table1] Description
   #  =begin table [table1] ::cssclass Description
+  # PseudoPOD syntax with Z<>:
+  #  =begin table Z<table1> ::cssclass Description
+  #  =begin table ::cssclass Z<table1>Description
 
   #  =for figure [fig1] ::cssclass F<Description|filename.png>
   #  =for figure [fig1] ::cssclass F<filename.png> Description
 
-  #  =for boxart [fig1] ::cssclass Description
+  #  =for boxart [fig1] ::cssclass F<filename.txt> Description
 
   #  =for include ::-1 F<Description|filename.pod>
   #  =for includeonce ::-1 F<Description|filename.pod>
@@ -359,7 +364,7 @@ sub _parse_content_start
   #  =for comment This gets ignored.
   #  =for author T. He Authore
 
-  my ($self, $input) = @_;
+  my ($self, $type, $input) = @_;
 
   # no input?
   return (undef, [], '') if !defined $input || $input =~ /^[\s\t]*$/;
@@ -397,33 +402,96 @@ sub _parse_content_start
 
 sub _handle_start
   {
-  my ($self, $type, $input, $isfor) = @_;
+  # handle the start of a new directive (begin/end/for/item etc) or command (C<foo>)
+  # $is_inline	= true for C<> etc.
+  # $is_for	= true for =for
+  my ($self, $type, $input, $is_for, $is_inline) = @_;
 
-  my ($name, $classes, $content) = $self->_parse_content_start( $input );
+  # TODO: if the previous paragraph has still content, handle it first
+  
+  my ($name, $classes, $content) = $self->_parse_content_start( $type, $input );
 
-  # if this is a "=for foobar Content", then "Content" is the entire content
-  # if this is a "=begin foobar Description", then "Description" is merely the description
+  my $description;
+  if ($is_for)
+    {
+    # if this is a "=for foobar Content", then "Content" is the entire content
+    # if this is a "=for todo Description: Content", then split "Description" and Content
+    if ($content =~ /^(.*:) (.+)/)
+      {
+      $description = $1; $content = $2;
+      }
+    }
+  else
+    {
+    # if this is a "=begin foobar Description", then "Description" is merely the description
+    $description = $content; $content = '';
+    }
 
-  my $description = $isfor ? undef : $content;
-  $content = $isfor ? $content : undef;
+  # The new node is a child of the previous node, except if it has a headX
+  # higher or equal to the current node:
+  #  =head1 Foo				<-- document => head1
+  #  =head2 Bar				<-- document => head1 => head2
+  #  =head3 Baz				<-- document => head1 => head2 (Baz) => head3
+  #  =head2 Boo				<-- document => head1 => head2 (Baz) => head3
+  my $parent = $self->{curnode};
+
+  my $level = 0;			# not set for non-head nodes
+  if ($type =~ /^head([1-6])/)
+    {
+    # go back in the tree to the last "head" node which level is <= this level
+    while ($parent)
+      {
+      if ($parent->{level} > 0 && $parent->{level} <= $level)
+	{
+	last;
+	}
+      $parent = $parent->{parent};
+      }
+    }
+
+  # if the current node is a =for directive, "end" it
+  if ($parent->{is_for})
+    {
+    # go back one node
+    $parent = $parent->{parent};
+    }
 
   # create a new node and insert it as children in the current node
-  my $node = Pod::PodNG::Node->new( type => 'document', id => $name, class => $classes,
+  my $node = Pod::PodNG::Node->new( type => $type, name => $name, class => $classes,
+				    is_for => $is_for, level => $level,
 				    description => $description, content => $content );
 
   }
 
 sub _handle_end
   {
-  # We saw the end of a directive (either =end, or the next paragraph)
-  my ($self, $content) = @_;
+  # We saw the end of a directive (either =end, or the next paragraph after =foo)
+  my ($self) = @_;
 
+  # TODO: parse special paragraphs like table etc.
+
+  # add the linestack to the node's content
+  $self->{curnode}->add_content( $self->{linestack} );
+
+  $self->{linestack} = [];
+
+  # go back one node
+  $self->{curnode} = $self->{curnode}->{parent} if $self->{curnode}->{parent};
+
+  $self;
   }
 
-sub _handle_end_for
+sub _new_paragraph
   {
-  my ($self, $content) = @_;
+  # when we see a newline between text blocks, start a new paragraph
+  # type = 'text' or 'verbatim';
+  my ($self, $type) = @_;
 
+  $self->log_info("New $type paragraph");
+  # create a new node and insert it as children in the current node
+  my $node = Pod::PodNG::Node->new( type => $type ); 
+
+  $node;
   }
 
 #############################################################################
@@ -445,7 +513,7 @@ sub _analyse_line
     {
     $self->log_info("Seen =pod");
 
-    $self->_warn( "=pod does not take any arguments" ) if defined $1;
+    $self->_warn( "=pod does not take any arguments like '$1'" ) if defined $1 && $1 ne '';
     # TODO: Support "::class" or "::id"?
 
     # set the current file to be in_pod, and ignore if it already is
@@ -456,7 +524,7 @@ sub _analyse_line
     {
     $self->log_info("Seen =cut");
 
-    $self->_warn( "=cut does not take any arguments" ) if defined $1;
+    $self->_warn( "=cut does not take any arguments like '$1'" ) if defined $1 && $1 ne '';
     # set the current file to be not in_pod, and ignore if it already is
     $self->{curfile}->{in_pod} = 0;
     return 1;
@@ -480,7 +548,7 @@ sub _analyse_line
   ###########################################################################
   # Handling of =headX
 
-  if ($line =~ /^=(head[1-6])(.*)\z/)
+  if ($line =~ /^=(head[1-6]) (.*)\z/)
     {
     my $type = $1; my $suffix = $2;
     return $self->_handle_start( $type, $suffix );
@@ -489,19 +557,19 @@ sub _analyse_line
   ###########################################################################
   # Handling of =over, =item and =back
 
-  if ($line =~ /^=over(.*)\z/)
+  if ($line =~ /^=over ([0-9]+)\z/)
     {
     my $level = $1;
     $self->log_info("Seen =over");
     return $self->_handle_start( '=over', $level );
     }
-  if ($line =~ /^=item(.*)\z/)
+  if ($line =~ /^=item (.*)\z/)
     {
     my $item = $1;
     $self->log_info("Seen =item");
     return $self->_handle_start( '=item', $item );
     }
-  if ($line =~ /^=back(.*)\z/)
+  if ($line =~ /^=back (.*)\z/)
     {
     my $suffix = $1;
     $self->log_info("Seen =back");
@@ -511,30 +579,39 @@ sub _analyse_line
   ###########################################################################
   # now handle =begin, =end and =for
 
-  if ($line =~ /^=begin ([a-zA-Z]+)( .*)$/)
+  if ($line =~ /^=begin $self->{qr_section_name}(.*)$/)
     {
     return $self->_handle_start( $1, $2 );
     }
-  if ($line =~ /^=for ([a-zA-Z]+)( .*)$/)
+  if ($line =~ /^=for $self->{qr_section_name}(.*)$/)
     {
     return $self->_handle_start( $1, $2, 'for' );
     }
-  if ($line =~ /^=end ([a-zA-Z]+)( .*)$/)
+  if ($line =~ /^=end $self->{qr_section_name}(.*)$/)
     {
     return $self->_handle_end( $1, $2 );
     }
 
   # if the line is empty, and we are currently in a for-section, end the section
-  if ($line =~ /^[\s\t]+$/)
+  if ($line =~ /^$/)
     {
     if ($self->{curnode}->{is_for})
       {
-      return $self->_handle_end_for();
+      return $self->_handle_end();
       }
+    $self->{curnode} = $self->{curnode}->{parent} if $self->{curnode}->{parent};
     }
 
-  # Since the line is neither =begin, =end nor =for, we are inside a section, so
-  # accumulate content until we are outside the section again
+  # Since the line is neither =begin, =end nor =for, nor empty, we are inside a
+  # section, so accumulate content until we are outside the section again.
+
+  # If this is the first line, determine if it is a verbatim or normal paragraph
+  # and start it:
+  if (@{ $self->{linestack} } == 0)
+    {
+    $self->_new_paragraph( $line =~ /^[\s\t]/ ? 'verbatim' : 'text' );
+    }
+
   push @{ $self->{linestack} }, $line;
 
   # TODO: add the actual parsing of paragraphs

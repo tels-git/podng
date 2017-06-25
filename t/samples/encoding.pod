@@ -1,0 +1,13 @@
+=pod
+
+=encoding utf-8
+
+=head1 Some UTF8 ^ ! " § $ % & / ( ) = ? \ ß º µ Ŧ
+
+A small POD document for testing UTF-8 encoding and HTML escaping.
+
+Escapes: E<amp> E<lt>
+
+  Verbatim text block: < > & C<normal>
+
+=cut

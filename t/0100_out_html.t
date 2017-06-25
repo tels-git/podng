@@ -2,7 +2,7 @@
 
 # Test that the HTML output works
 
-use Test::More tests => 6 + 2;
+use Test::More tests => 6 + 3;
 
 use lib 'lib';
 require_ok( 'Pod::PodNG' );
@@ -19,5 +19,8 @@ for my $tag (qw/html body head/)
   like ($html, qr/<$tag>/);
   like ($html, qr/<\/$tag>/);
   }
+
+my $rc = $podng->parse( 't/samples/encoding.pod' );
+is($rc // 0, '0');
 
 1;

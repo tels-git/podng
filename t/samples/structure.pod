@@ -1,0 +1,49 @@
+=pod
+
+=encoding utf-8
+
+=head1 Headline 1
+
+A small POD document for testing parsing nested levels and structures.
+
+=head2 Headline 1.1
+
+This headline is below Headline 1.
+
+  Verbatim text block.
+
+=over 2
+
+=item * List below =head2
+
+=back
+
+=begin comment
+
+Some comment.
+
+=end comment
+
+=for comment A single line comment.
+
+=over 2
+
+=item * List below 1.1, but not below list 1.
+
+=over 4
+
+=item * List below =list1.
+
+=back
+
+=back
+
+=head2 Headline 1.2
+
+Should be below Headline 1, not Headline 1.2.
+
+=head1 Headline 2
+
+Below document, not Headline 1.
+
+=cut
