@@ -1,17 +1,313 @@
 #!/usr/bin/perl -w
 
-# This is a commandline wrapper around the Pod::PodNG Perl module
-
 use strict;
-use warnings;
-use Getopt::Long;
 use Pod::PodNG;
 
-my $opt = { verbose => 0, debug => 0 };
+my $help_requested = 0;
 
-my $podng = Pod::PodNG->new();
+# echo "[A]" | podng	  		# should work
+# podng					# need help
+$help_requested = 1 if @ARGV == 0 && -t STDIN;
 
-# TODO:
-# * option handling
-# * let Pod::PodNG parse the input
-# * output the result
+my $OUT = \*STDERR;
+my $opt = get_options();
+
+# error?
+$help_requested = 1 if !ref($opt);
+
+# no error and --help was specified
+$help_requested = 2 if ref($opt) && $opt->{help} ne '';
+
+my $copyright = "Pod::PodNG v$Pod::PodNG::VERSION  (c) by Tels 2016 - 2017.  "
+	       ."Released under the GPL 3.0 or later.\n\n";
+
+if (ref($opt) && $opt->{version} != 0)
+  {
+  print $copyright;
+  print "Running under Perl v$]";
+  eval { require Graph::Easy; };
+  if (defined $Graph::Easy::VERSION)
+    {
+    print ", using Graph::Easy v$Graph::Easy::VERSION";
+    }
+  eval { require Graph::Easy::As_svg; };
+  if (defined $Graph::Easy::As_svg::VERSION)
+    {
+    print " and using Graph::Easy::As_svg v$Graph::Easy::As_svg::VERSION";
+    }
+  print ".\n\n";
+  exit 2;
+  }
+
+if ($help_requested > 0)
+  {
+  print STDERR $copyright;
+  require Pod::Usage;
+  if ($help_requested > 1 && $Pod::Usage::VERSION < 1.35)
+    {
+    # The way old Pod::Usage executes "perldoc" might fail:
+    system('perldoc', $0);
+    exit 2;
+    }
+  Pod::Usage::pod2usage( { -exitval => 2, -verbose => $help_requested } );
+  }
+
+my $verbose = $opt->{verbose};
+
+print $OUT $copyright if $verbose;
+
+#############################################################################
+# Create the Pod::PodNG parser object
+
+print $OUT "Creating Pod::PodNG object.\n" if $verbose;
+
+my $parser = Pod::PodNG->new( debug => $opt->{debug} );
+
+#############################################################################
+# parse the input file
+
+print $OUT "Parsing input in $opt->{from} from $opt->{inputname}.\n" if $verbose;
+
+my $podng = $parser->parse($opt->{input});
+
+my $error = '';
+$error = $parser->error() if !$podng || $parser->error();
+
+die ($error) if $error;
+
+#############################################################################
+# If wanted, generate the statistics:
+
+if ($opt->{stats})
+  {
+  # TODO
+  }
+
+#############################################################################
+# Generate the wanted output format and write it to the output:
+
+if (! $opt->{parse})
+  {
+#  my $method = 'as_' . $opt->{as} . '_file';
+##  if ($verbose)
+#    {
+##    if ($opt->{outputname} =~ /\.$external\z/)
+#      {
+##      print $OUT "Piping output to '$opt->{renderer} -T$opt->{ext} -o \"$opt->{outputname}\"'.\n";
+#      }
+#    else
+#      {
+#      print $OUT "Writing output as $opt->{as} to $opt->{outputname}.\n";
+#      }
+#    }
+#
+#
+#  my $FILE = $opt->{output};
+#  print $FILE $podng->$method();
+
+  print $OUT "Everything done. Have fun!\n\n" if $verbose;
+  }
+
+#############################################################################
+# Everything done
+
+#############################################################################
+#############################################################################
+
+sub get_options
+  {
+  # set the defaults
+  my $opt = {
+    input => undef,
+    output => undef,
+    as => '',
+    help => '',
+    as_html => '',
+    as_pod => '',
+    debug => 0,
+    verbose => 0,
+    version => 0,
+    parse => 0,
+    stats => 0,
+  };
+
+  # do we have some options?
+  if (@ARGV > 0)
+    {
+    require Getopt::Long;
+
+    my @o = (
+	"input=s" => \$opt->{input},
+	"output=s" => \$opt->{output},
+	"help|?" => \$opt->{help},
+	"version" => \$opt->{version},
+	"verbose" => \$opt->{verbose},
+	"debug=i" => \$opt->{debug},
+	"parse" => \$opt->{parse},
+	"stats" => \$opt->{stats},
+	);
+
+    return unless Getopt::Long::GetOptions (@o);
+    }
+
+  # if there are arguments left, they are input and possible output
+  $opt->{input} = shift @ARGV if @ARGV;
+  $opt->{output} = shift @ARGV if @ARGV;
+
+  if (!defined $opt->{input})
+    {
+    $opt->{input} = \*STDIN;
+    $opt->{inputname} = 'STDIN';
+    }
+  else
+   {
+   $opt->{inputname} = $opt->{input};
+   }
+
+  # if the input is named "foo.pod", generate foo.html, unless the user overrides it
+  $opt->{output} = $opt->{input} unless defined $opt->{output} && !ref $opt->{input};
+
+  if (!defined $opt->{output})
+    {
+    $opt->{outputname} = 'STDOUT';
+    $opt->{output} = \*STDOUT;
+    }
+  else
+    {
+    my $file = $opt->{output};
+    $opt->{outputname} = $opt->{output};
+    $opt->{output} = undef;
+
+    # do not clobber the output file if we cannot read the input
+    return unless ref $opt->{input} || -R $opt->{input};
+
+    open $opt->{output}, ">", $file or die ("Cannot write to $file: $!");
+    binmode ($opt->{output}, ':utf8') or die ("Cannot do binmode(output,':utf8')");
+    }
+
+  $opt;
+  }
+
+__END__
+
+=pod
+
+=head1 NAME
+
+podng - Convert PodNG input to HTML
+
+=head1 SYNOPSIS
+
+Convert PodNG input to HTML:
+
+	podng [options] [inputfile [outputfile]]
+
+	echo "=head1 Headline!" | podng >pod.html
+
+=head1 ARGUMENTS
+
+Here are the most important options, more are listed in the full
+documentation:
+
+=over 10
+
+=item --help
+
+Print the full documentation, not just this short overview.
+
+=item --input
+
+Specify the input file name. Example:
+
+    podng --input=some.pod
+
+=item --output
+
+Specify the output file name. Example:
+
+    podng --output=documentation.html input.pod
+
+=item --parse
+
+Input will only be parsed, without any output generation.
+Useful in combination with C<--debug=1> or C<--stats>. Example:
+
+    podng input.pod --parse --debug=1
+
+=item --stats
+
+Write various statistics about the input to STDERR. Best used in
+combination with C<--parse>:
+
+    podng input.pod --parse --stats
+
+=item --verbose
+
+Write info regarding the conversion process to STDERR.
+
+=back
+
+=head1 DESCRIPTION
+
+C<podng> reads a text in PodNG (a superset of POD) and generates a nice
+HTML page from it.
+
+By default, the input will be read from STDIN, and the output will go to
+STDOUT. The input is expected to be encoded in UTF-8, the output will
+also be UTF-8.
+
+=head1 OTHER ARGUMENTS
+
+C<podng> supports a few more arguments in addition to the ones from above:
+
+=over 10
+
+=item --version
+
+Write version info and exit.
+
+=item --debug=N
+
+Set the debug level (1..3). Warning, this will generate huge
+amounts of hard to understand output on STDERR. Example:
+
+	podng input.pod --output=test.html --debug=1
+
+=back
+
+If you notice anything wrong, or miss attributes, please file a bug report on
+
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Pod::PodNG>
+
+so we can fix it and include the missing things.
+
+X<bugreport>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the terms of the GPL.
+
+See the LICENSE file of Graph::Easy for a copy of the GPL.
+
+This product includes color specifications and designs developed by Cynthia
+Brewer (L<http://colorbrewer.org/>). See the LICENSE file for the full license
+text that applies to these color schemes.
+X<gpl>
+X<apache-style>
+X<cynthia>
+X<brewer>
+X<colorscheme>
+X<license>
+
+=head1 AUTHOR
+
+Copyright (C) 2017 by Tels L<http://bloodgate.com>
+
+=head1 SEE ALSO
+
+More information and examples can be found in the online manual:
+
+L<http://bloodgate.com/perl/podng/>
+
+=cut
