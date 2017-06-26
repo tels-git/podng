@@ -21,9 +21,7 @@ sub as_html
   # Return the node and all it's children as HTML
   my ($self) = @_;
 
-  my $html = $self->{is_root} ? $self->_html_header() : '';
-
-  $html .= $self->_as_html_start();
+  my $html = $self->{is_root} ? $self->_html_header() : $self->_as_html_start();
 
   # add all children
   for my $child (@{$self->{children}})
@@ -31,9 +29,9 @@ sub as_html
     $html .= $child->as_html();
     }
 
-  $html .= $self->_as_html_end();
+  $html .= $self->_html_escape( $self->{content} );
 
-  $html .= $self->{is_root} ? $self->_html_footer() : '';
+  $html .= $self->{is_root} ? $self->_html_footer() : $self->_as_html_end();
 
   # return the result
   $html;
@@ -42,14 +40,26 @@ sub as_html
 #############################################################################
 # Helper routines for hTML output
 
-sub _html_esscape
+sub _html_escape
   {
   my ($self, $text) = @_;
+
+  return '' unless defined $text;
 
   $text =~ s/&/&amp;/g;
   $text =~ s/</&lt;/g;
   $text =~ s/>/&gt;/g;
   $text =~ s/"/&quot;/g;
+
+  $text;
+  }
+
+sub _html_escape_css
+  {
+  my ($self, $text) = @_;
+
+  # convert "fooü' bar" to "foo_ bar"
+  $text =~ s/[^a-zA-Z0-9 ]/_/;
 
   $text;
   }
@@ -76,7 +86,7 @@ EOF
 
 sub _html_footer
   {
-  # return the HTML </head> tags etc.
+  # return the end of HTML
   my ($self) = @_;
 
   "  </body>\n</html>\n";
@@ -89,14 +99,18 @@ sub _as_html_start
 
   my $html = $self->{html};
 
-  my $class = defined $html->{class} ? ' class="' . $html->{class} . '"' : '';
+  my $class = @{$html->{class}} > 0 ?
+	  ' class="' . $self->_html_escape_css(join(" ", @{$html->{class}})) . '"'
+	: '';
+
+  my $id = $self->{id} ? ' id="' . $self->_html_escape_css($self->{id}) . '" ' : '';
 
   if ($html->{single_tag})
     {
-    return "<$html->{tag} />";
+    return "<$html->{tag}$id$class />";
     }
 
-  "<$html->{tag}$class>";
+  "<$html->{tag}$id$class>";
   }
 
 sub _as_html_end

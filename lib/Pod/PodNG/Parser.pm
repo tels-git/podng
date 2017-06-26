@@ -50,31 +50,29 @@ sub _init
 	'^'	=> [  'sup',         '', 0, 'superscript' ],
 	};
 
-  # the directives we accept with "=NAME":
-  # Format:
-  #   source	=> [ handler, tag, css_class, wrap content in div?, description ]
-  $self->{directives} = {
-
-	head1		=> [ 'head', 'h1', '', 1, 'headline level 1' ],
-	head2		=> [ 'head', 'h2', '', 1, 'headline level 2' ],
-	head3		=> [ 'head', 'h3', '', 1, 'headline level 3' ],
-	head4		=> [ 'head', 'h4', '', 1, 'headline level 4' ],
-	head5		=> [ 'head', 'h5', '', 1, 'headline level 5' ],
-	head6		=> [ 'head', 'h6', '', 1, 'headline level 6' ],
-
-	encoding	=> [ 'encoding' ],
-
-	over		=> [ 'liststart', '', '', 0, 'Begin of a list' ],
-	item		=> [ 'listitem',  '', '', 0, 'Item in a list' ],
-	back		=> [ 'listend',	  '', '', 0, 'End of a list' ],
-  };
-  # The sections (directives) we accept with =begin, =end or =for:
+  # The directives, and sections we accept with =begin, =end or =for:
   # Format:
   #   source	=> [ type, handler, tag, css_class, wrap content in div?, description ]
   # type => 1 => =begin/=end
   #         2 => =for
   #         3 => both =for and =begin/=end
+  # The directives we accept with "=NAME" have type=0:
   $self->{sections} = {
+
+	head1		=> [ 0, 'head',		'h1', '', 1, 'headline level 1' ],
+	head2		=> [ 0, 'head',		'h2', '', 1, 'headline level 2' ],
+	head3		=> [ 0, 'head',		'h3', '', 1, 'headline level 3' ],
+	head4		=> [ 0, 'head',		'h4', '', 1, 'headline level 4' ],
+	head5		=> [ 0, 'head',		'h5', '', 1, 'headline level 5' ],
+	head6		=> [ 0, 'head', 	'h6', '', 1, 'headline level 6' ],
+
+	encoding	=> [ 0, 'encoding' ],
+
+	over		=> [ 0, 'liststart',	'ul', '', 0, 'Begin of a list' ],
+	item		=> [ 0, 'listitem',	'li', '', 0, 'Item in a list' ],
+	back		=> [ 0, 'listend',	'',   '', 0, 'End of a list' ],
+
+  # sections (=begin/=end/=for)
 	colorscheme	=> [ 2, 'colorscheme' ],
 
 	include		=> [ 2, 'include' ],
@@ -138,7 +136,7 @@ sub _add_node_child
   # add a node as child the current node, making it the new current node
   my ($self, $node) = @_;
 
-  $self->{nodes} = { $node->{id} = $node };	# register the new node
+  $self->{nodes} = { $node->{id} => $node };	# register the new node
 
   $self->{curnode}->add_child( $node );		# add as child
   $self->{curnode} = $node;			# make current
@@ -159,6 +157,17 @@ sub _unwind_tree
   $self->{curnode};
   }
 
+
+sub _create_document_tree
+  {
+  # construct the tree and add the document to it as root
+  my ($self) = @_;
+
+  $self->{tree} = Pod::PodNG::Node->new( type => 'document', is_root => 1 );
+  $self->{curnode} = $self->{tree};
+  $self->{nodes} = { $self->{tree}->{id} => $self->{tree} };
+  }
+
 #############################################################################
 # Public methods
 
@@ -172,9 +181,7 @@ sub parse
   $self->{tree}->cleanup() if $self->{tree};		# remove all nodes and children
 
   # construct the tree and add the document to it as root
-  $self->{tree} = Pod::PodNG::Node->new( type => 'document', is_root => 1 );
-  $self->{curnode} = $self->{tree};
-  $self->{nodes} = { $self->{tree}->{id} => $self->{tree} };
+  $self->_create_document_tree();
 
   $self->{seen_includes} = {};
   $self->{include_stack} = {};
@@ -366,7 +373,7 @@ sub _parse_content_start
   # no input?
   return (undef, [], '') if !defined $input || $input =~ /^[\s\t]*$/;
 
-  print STDERR "[_parse_content_start]: '$input'\n";
+  $self->log_info( "[_parse_content_start]: '$input'" );
 
   my $name = undef;
   my $classes = [];
@@ -421,7 +428,11 @@ sub _handle_start
   else
     {
     # if this is a "=begin foobar Description", then "Description" is merely the description
-    $description = $content; $content = '';
+    if ($self->{sections}->{$type}->[0] != 0)
+      {
+      $description = $content; $content = '';
+      }
+    # else for directives like =head1, keep the content as is
     }
 
   # The new node is a child of the previous node, except if it has a headX
@@ -453,11 +464,22 @@ sub _handle_start
     $parent = $parent->{parent};
     }
 
-  # create a new node and insert it as children in the current node
-  my $node = Pod::PodNG::Node->new( type => $type, name => $name, class => $classes,
-				    is_for => $is_for, level => $level,
-				    description => $description, content => $content );
+  my ($html_tag, $html_class);
+  my $d = $self->{sections};
+  ($html_tag, $html_class) = ($d->{$type}->[2], $d->{$type}->[3]) if exists $d->{$type};
 
+  # prepend the section class so user-added classes come last
+  unshift @$classes, $html_class if defined $html_class && $html_class ne '';
+
+  # create a new node and insert it as children in the current node
+  $self->_add_node_child(
+	Pod::PodNG::Node->new(  type => $type, name => $name,
+				class => $classes, tag => $html_tag, 
+				is_for => $is_for, level => $level,
+				description => $description, content => $content )
+	);
+
+  $self;
   }
 
 sub _handle_end
@@ -486,9 +508,7 @@ sub _new_paragraph
 
   $self->log_info("New $type paragraph");
   # create a new node and insert it as children in the current node
-  my $node = Pod::PodNG::Node->new( type => $type ); 
-
-  $node;
+  $self->_add_node_child( Pod::PodNG::Node->new( type => $type ) ); 
   }
 
 #############################################################################
@@ -654,7 +674,7 @@ sub _clean_up
   delete $self->{include_stack};
   delete $self->{linestack};
 
-  $self->{tree}->cleanup();		# remove all nodes and children
+  # Keep the tree and document intact, because we will want to use it after parsing
 
   $self;
   }
