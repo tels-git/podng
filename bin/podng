@@ -68,10 +68,9 @@ my $parser = Pod::PodNG->new( debug => $opt->{debug} );
 
 print $OUT "Parsing input in $opt->{from} from $opt->{inputname}.\n" if $verbose;
 
-my $podng = $parser->parse($opt->{input});
+my $error = $parser->parse( $opt->{input} );
 
-my $error = '';
-$error = $parser->error() if !$podng || $parser->error();
+$error = $parser->error() if !defined $error;
 
 die ($error) if $error;
 
@@ -102,8 +101,8 @@ if (! $opt->{parse})
 #    }
 #
 #
-#  my $FILE = $opt->{output};
-#  print $FILE $podng->$method();
+  my $FILE = $opt->{output};
+  print $FILE $parser->as_html();
 
   print $OUT "Everything done. Have fun!\n\n" if $verbose;
   }
@@ -154,34 +153,28 @@ sub get_options
   $opt->{input} = shift @ARGV if @ARGV;
   $opt->{output} = shift @ARGV if @ARGV;
 
-  if (!defined $opt->{input})
-    {
-    $opt->{input} = \*STDIN;
-    $opt->{inputname} = 'STDIN';
-    }
-  else
-   {
-   $opt->{inputname} = $opt->{input};
-   }
+  $opt->{input} //= 'STDIN';
 
   # if the input is named "foo.pod", generate foo.html, unless the user overrides it
-  $opt->{output} = $opt->{input} unless defined $opt->{output} && !ref $opt->{input};
+#  $opt->{output} = $opt->{input} unless defined $opt->{output} || $opt->{input} eq 'STDIN';
 
   if (!defined $opt->{output})
     {
     $opt->{outputname} = 'STDOUT';
-    $opt->{output} = \*STDOUT;
+    $opt->{output} = *STDOUT;
     }
   else
     {
-    my $file = $opt->{output};
     $opt->{outputname} = $opt->{output};
     $opt->{output} = undef;
 
     # do not clobber the output file if we cannot read the input
-    return unless ref $opt->{input} || -R $opt->{input};
+    return unless $opt->{input} eq 'STDIN' || -R $opt->{input};
 
-    open $opt->{output}, ">", $file or die ("Cannot write to $file: $!");
+    if ($opt->{outputname} ne 'STDOUT')
+      {
+      open $opt->{output}, ">", $opt->{outputname} or die ("Cannot write to $opt->{outputname}: $!");
+      }
     binmode ($opt->{output}, ':utf8') or die ("Cannot do binmode(output,':utf8')");
     }
 

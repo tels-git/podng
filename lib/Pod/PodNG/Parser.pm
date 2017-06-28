@@ -189,18 +189,18 @@ sub parse
   $self->{linestack} = [];	# accumulate here the content of one section until the end
   $self->{cur_section} = undef;	# not yet in any section
 
-  if (-f $input)
+  if ($input eq '-' || $input eq 'STDIN' || -f $input)
     {
     $self->parse_file( $input );
     }
   else
     {
-    $self->_error( "Input looks like a file, but cannot be read: $!" ) if $input =~ /\.pod$/;
+    return $self->_error( "Input looks like a file, but cannot be read: $!" ) if $input =~ /\.pod$/;
     $self->parse_string_document( $input );
     }
 
   # signal the caller everything is ok
-  0;
+  undef;
   }
 
 sub parse_file
@@ -225,7 +225,7 @@ sub parse_string_document
   {
   my ($self, $content) = @_;
 
-  $self->{file_stack} = ( Pod::PodNG::File->new( '' ) );
+  $self->{file_stack} = ( Pod::PodNG::File->new( filename => '' ) );
 
   my @lines = split /\n/, $content;
 

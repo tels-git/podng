@@ -35,7 +35,24 @@ sub _init
   $self->{in_comment} = 0;	# not yet
   $self->{in_include} = 0;	# not yet
 
-  open ( $self->{handle}, '<', $self->{filename} ) or return $self->_error("Cannot open $self->{filename}: $!");
+  # support this way to write "STDIN":
+  $self->{filename} = 'STDIN' if $self->{filename} eq '-';
+
+  if ($self->{filename} eq 'STDIN')
+    {
+    $self->{stdin} = *STDIN;			# save the old STDIN
+    open ( $self->{handle}, '<&STDIN' ) or	# re-open it
+	return $self->_error("Cannot open STDIN: $!");
+    }
+  else
+    {
+    # filename = '' => reading from a scalar in memory
+    if ($self->{filename} ne '')
+      {
+      open ( $self->{handle}, '<', $self->{filename} ) or
+	return $self->_error("Cannot open $self->{filename}: $!");
+      }
+    }
 
   $self->{open} = 1;
 

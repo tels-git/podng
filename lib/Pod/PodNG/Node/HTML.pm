@@ -59,7 +59,7 @@ sub _html_escape_css
   my ($self, $text) = @_;
 
   # convert "fooü' bar" to "foo_ bar"
-  $text =~ s/[^a-zA-Z0-9 ]/_/;
+  $text =~ s/[^a-zA-Z0-9 ]/_/g;
 
   $text;
   }

@@ -63,6 +63,16 @@ sub set
 #############################################################################
 # logging and error handling
 
+# public usage, get last error
+sub error
+  {
+  my ($self) = @_;
+
+  $self->{error};
+  }
+
+
+# internal usage, get and set error
 sub _error
   {
   my ($self, $error) = @_;
