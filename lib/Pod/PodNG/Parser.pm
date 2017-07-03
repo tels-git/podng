@@ -578,19 +578,19 @@ sub _analyse_line
     {
     my $level = $1;
     $self->log_info("Seen =over");
-    return $self->_handle_start( '=over', $level );
+    return $self->_handle_start( 'over', $level );
     }
   if ($line =~ /^=item (.*)\z/)
     {
     my $item = $1;
     $self->log_info("Seen =item");
-    return $self->_handle_start( '=item', $item );
+    return $self->_handle_start( 'item', $item );
     }
   if ($line =~ /^=back (.*)\z/)
     {
     my $suffix = $1;
     $self->log_info("Seen =back");
-    return $self->_handle_end( '=back', $suffix );
+    return $self->_handle_end( 'back', $suffix );
     }
 
   ###########################################################################
