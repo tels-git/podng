@@ -64,6 +64,13 @@ sub as_html
   $self->{parser}->tree()->as_html();
   }
 
+sub add_css_link
+  {
+  my $self = shift;
+
+  $self->{parser}->tree()->add_css_link( @_ );
+  }
+
 # everything is fine
 1;
 

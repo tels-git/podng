@@ -46,4 +46,10 @@ Should be below Headline 1, not Headline 1.2.
 
 Below document, not Headline 1.
 
+=begin boxart
+
+ Some boxart graphic here.
+
+=end boxart
+
 =cut

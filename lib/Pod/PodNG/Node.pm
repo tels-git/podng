@@ -53,6 +53,7 @@ sub _init
 	{
 		tag => $attr->{tag} // 'span',
 		class => $attr->{class} // [],
+		css_links => {},
 	};
   $self;
   }

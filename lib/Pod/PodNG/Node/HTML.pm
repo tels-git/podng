@@ -37,8 +37,47 @@ sub as_html
   $html;
   }
 
+sub add_css_link
+  {
+  # Add a CSS link, it will be added to the generated HTML header on output
+  # Returns 1 if the link was added, 0 if it was ignored.
+  my ($self, $link, $media) = @_;
+
+  # only add CSS links to the root node
+  return 0 unless $self->{is_root};
+
+  $media //= 'screen';	# if not set, use "screen" as default
+
+  # check that the media type is a list of the correct types
+  my @media = split /\s*,\s*/, $media;
+  for my $m (@media)
+    {
+    return $self->_error("Unknown CSS media type '$m'") unless $m
+	=~ /^(screen|print|projection|aural|braille|tty|tv|all)\z/;
+    }
+
+#    screen, for presentation on non-paged computer screens;
+#    print, for output to a printer;
+#    projection, for projected presentations;
+#    aural, for speech synthesizers;
+#    braille, for presentation on braille tactile feedback devices;
+#    tty, for character cell displays (using a fixed-pitch font);
+#    tv, for televisions;
+#    all, for all output devices.
+
+  my $css = $self->{html}->{css_links};	# a shortcut
+
+  # ignore duplicates
+  return 0 if exists $css->{$link};
+
+  # remember we added it and remember the order in that we added them
+  $css->{$link} = [ scalar keys %$css, $media ];
+
+  1;
+  }
+
 #############################################################################
-# Helper routines for hTML output
+# Helper routines for HTML output
 
 sub _html_escape
   {
@@ -54,15 +93,48 @@ sub _html_escape
   $text;
   }
 
+
 sub _html_escape_css
   {
   my ($self, $text) = @_;
 
-  # convert "fooü' bar" to "foo_ bar"
+  # convert "fooü' bar" to "foo__ bar"
   $text =~ s/[^a-zA-Z0-9 ]/_/g;
 
   $text;
   }
+
+sub _html_escape_property
+  {
+  my ($self, $text) = @_;
+
+  # convert "foo' bar" to "foo\' bar"
+  $text =~ s/'/\\'/g;
+  $text =~ s/"/\\"/g;
+
+  $text;
+  }
+
+
+sub _css_as_links
+  {
+  my ($self, $pad) = @_;
+
+  $pad //= ' ' x 4;
+
+  my $css = '';
+  my $c = $self->{html}->{css_links};
+  # sort the entries on the order we got them, so we keep the order
+  for my $entry (sort { $c->{$a}->[0] <=> $c->{$b}->[0] } keys %{$self->{html}->{css_links}})
+    {
+    my $link = $self->_html_escape_property( $entry );
+    $css .= "$pad<link rel='stylesheet' href='$link' media='$c->{$entry}->[1]'>\n";
+    }
+
+  # return the result
+  $css;
+  }
+
 
 sub _html_header
   {
@@ -79,7 +151,9 @@ my $tpl = <<EOF
 EOF
 ;
 
-  $tpl =~ s/##HEADER##//;
+  my $css_links = $self->_css_as_links();
+
+  $tpl =~ s/##HEADER##/$css_links/;
 
   $tpl;
   }
